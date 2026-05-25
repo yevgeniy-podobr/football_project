@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/client';
+import { PasswordInput } from '../components/PasswordInput';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -50,8 +51,7 @@ export default function ResetPasswordPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm text-gray-400 mb-1.5">New password</label>
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -64,8 +64,7 @@ export default function ResetPasswordPage() {
 
         <div>
           <label className="block text-sm text-gray-400 mb-1.5">Confirm password</label>
-          <input
-            type="password"
+          <PasswordInput
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             required

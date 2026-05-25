@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/client';
 import { useUser } from '../context/UserContext';
+import { PasswordInput } from '../components/PasswordInput';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -61,8 +62,7 @@ export default function RegisterPage() {
 
         <div>
           <label className="block text-sm text-gray-400 mb-1.5">Password</label>
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
