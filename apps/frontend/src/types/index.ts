@@ -122,3 +122,45 @@ export interface AdminStats {
   matches: number;
   lastSyncAt: string | null;
 }
+
+export interface AdminUserRow {
+  id: number;
+  username: string | null;
+  email: string;
+  role: Role;
+  createdAt: string;
+  predictionCount: number;
+  accuracy: number | null;
+}
+
+export interface AdminUserDetail {
+  id: number;
+  username: string | null;
+  email: string;
+  role: Role;
+  createdAt: string;
+  stats: {
+    total: number;
+    correct: number;
+    exactScores: number;
+    accuracy: number;
+  } | null;
+  predictions: Array<{
+    id: number;
+    predictedHome: number;
+    predictedAway: number;
+    outcome: Outcome | null;
+    isExactScore: boolean | null;
+    createdAt: string;
+    match: {
+      id: number;
+      matchDate: string;
+      status: string;
+      homeScore: number | null;
+      awayScore: number | null;
+      competitionCode: string;
+      homeTeam: { name: string; shortName: string | null; crest: string | null };
+      awayTeam: { name: string; shortName: string | null; crest: string | null };
+    };
+  }>;
+}

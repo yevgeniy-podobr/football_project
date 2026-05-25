@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -13,5 +13,15 @@ export class AdminController {
   @Get('stats')
   getStats() {
     return this.adminService.getStats();
+  }
+
+  @Get('users')
+  getUsers() {
+    return this.adminService.getUsers();
+  }
+
+  @Get('users/:id')
+  getUserDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getUserDetail(id);
   }
 }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdminStats, GlobalStats, Match, Prediction, PredictionStats, Standing, User } from '../types';
+import type { AdminStats, AdminUserDetail, AdminUserRow, GlobalStats, Match, Prediction, PredictionStats, Standing, User } from '../types';
 
 const TOKEN_KEY = 'cl-predictor-token';
 
@@ -87,4 +87,6 @@ export const statsApi = {
 
 export const adminApi = {
   getStats: () => api.get<AdminStats>('/admin/stats').then((r) => r.data),
+  getUsers: () => api.get<AdminUserRow[]>('/admin/users').then((r) => r.data),
+  getUserDetail: (id: number) => api.get<AdminUserDetail>(`/admin/users/${id}`).then((r) => r.data),
 };

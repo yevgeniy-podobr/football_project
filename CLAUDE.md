@@ -56,7 +56,7 @@ football_project/
 - Role-based access control (USER / ADMIN) — `RolesGuard` + `@Roles()` decorator, role carried in JWT
 - "← Back to matches" passes `?comp=<code>` in match links, restoring the correct competition tab on return
 - Cron job (`SchedulerService`) auto-resolves predictions every 5 minutes via `@nestjs/schedule`
-- Admin panel (`/admin`) — DB stats, Resolve All button, Force Sync button; ADMIN-only via `AdminRoute`
+- Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 
 ## Auth
 All endpoints and frontend pages are fully implemented and wired up.
@@ -130,6 +130,8 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `RolesGuard` + `@Roles()` decorator live in `src/auth/`
 - `POST /predictions/resolve-all` requires `ADMIN` role (returns 403 for regular users)
 - `GET /admin/stats` requires `ADMIN` role — returns `{ users, predictions, matches, lastSyncAt }`
+- `GET /admin/users` requires `ADMIN` role — list with predictionCount + accuracy from PredictionStats
+- `GET /admin/users/:id` requires `ADMIN` role — full detail with stats + predictions (ordered by matchDate desc)
 - To promote a user to admin: `UPDATE "User" SET role = 'ADMIN' WHERE email = '...'`
 
 ## Known Issues
