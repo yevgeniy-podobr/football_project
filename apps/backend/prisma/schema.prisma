@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int              @id @default(autoincrement())
+  username           String?          @unique
+  email              String           @unique
+  name               String?
+  role               Role             @default(USER)
+  passwordHash       String?
+  resetToken         String?
+  resetTokenExpiry   DateTime?
+  predictions        Prediction[]
+  stats              PredictionStats?
+  createdAt          DateTime         @default(now())
+}
+
+model Team {
+  id          Int     @id @default(autoincrement())
+  externalId  Int     @unique
+  name        String
+  shortName   String?
+  crest       String?
+  homeMatches Match[] @relation("HomeTeam")
+  awayMatches Match[] @relation("AwayTeam")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Outcome {
+  HOME_WIN
+  DRAW
+  AWAY_WIN
+}
+
+model Match {
+  id          Int          @id @default(autoincrement())
+  externalId  Int          @unique
+  homeTeamId  Int
+  awayTeamId  Int
+  homeTeam    Team         @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    Team         @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  matchDate   DateTime
+  status      String
+  stage       String?
+  group       String?
+  homeScore    Int?
+  awayScore    Int?
+  halfTimeHome Int?
+  halfTimeAway Int?
+  winner       String?
+  goals           Json         @default("[]")
+  competition     String
+  competitionCode String       @default("CL")
+  season          String
+  cachedAt     DateTime     @default(now())
+  predictions  Prediction[]
+}
+
+model Prediction {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  matchId       Int
+  user          User     @relation(fields: [userId], references: [id])
+  match         Match    @relation(fields: [matchId], references: [id])
+  predictedHome Int
+  predictedAway Int
+  outcome       Outcome?
+  isExactScore  Boolean?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, matchId])
+}
+
+model StandingsCache {
+  id              Int      @id @default(autoincrement())
+  competitionCode String   @unique
+  data            Json
+  cachedAt        DateTime @default(now())
+}
+
+model PredictionStats {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  user           User     @relation(fields: [userId], references: [id])
+  total          Int      @default(0)
+  correct        Int      @default(0)
+  exactScores    Int      @default(0)
+  homeWinCorrect Int      @default(0)
+  drawCorrect    Int      @default(0)
+  awayWinCorrect Int      @default(0)
+  accuracy       Float    @default(0)
+  updatedAt      DateTime @updatedAt
+}

@@ -1,0 +1,17 @@
+{
+  "name": "football-predictor",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["@nestjs/core", "@prisma/client", "@prisma/engines", "esbuild", "prisma"]
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "db:push": "pnpm --filter backend db:push",
+    "db:migrate": "pnpm --filter backend db:migrate",
+    "db:generate": "pnpm --filter backend db:generate",
+    "db:studio": "pnpm --filter backend db:studio"
+  }
+}
