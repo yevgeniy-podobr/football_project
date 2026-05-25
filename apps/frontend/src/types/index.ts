@@ -17,11 +17,14 @@ export interface Team {
   crest?: string | null;
 }
 
+export type Role = 'USER' | 'ADMIN';
+
 export interface User {
   id: number;
   username?: string | null;
   email: string;
   name?: string | null;
+  role: Role;
   createdAt: string;
 }
 
@@ -111,4 +114,11 @@ export interface GlobalStats {
   correct: number;
   exactScores: number;
   averageAccuracy: number;
+}
+
+export interface AdminStats {
+  users: number;
+  predictions: number;
+  matches: number;
+  lastSyncAt: string | null;
 }

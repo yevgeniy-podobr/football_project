@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { GlobalStats, Match, Prediction, PredictionStats, Standing, User } from '../types';
+import type { AdminStats, GlobalStats, Match, Prediction, PredictionStats, Standing, User } from '../types';
 
 const TOKEN_KEY = 'cl-predictor-token';
 
@@ -57,7 +57,7 @@ export const matchesApi = {
       },
     }).then((r) => r.data),
   getOne: (id: number) => api.get<Match>(`/matches/${id}`).then((r) => r.data),
-  sync: () => api.get('/matches/sync').then((r) => r.data),
+  sync: (force = false) => api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
   upcoming: () => api.get<Match[]>('/matches/upcoming').then((r) => r.data),
   recent: () => api.get<Match[]>('/matches/recent').then((r) => r.data),
   h2h: (homeId: number, awayId: number) =>
@@ -83,4 +83,8 @@ export const statsApi = {
   getGlobal: () => api.get<GlobalStats>('/stats').then((r) => r.data),
   getUser: (userId: number) => api.get<PredictionStats>(`/stats/${userId}`).then((r) => r.data),
   recalculate: (userId: number) => api.post(`/stats/recalculate/${userId}`).then((r) => r.data),
+};
+
+export const adminApi = {
+  getStats: () => api.get<AdminStats>('/admin/stats').then((r) => r.data),
 };

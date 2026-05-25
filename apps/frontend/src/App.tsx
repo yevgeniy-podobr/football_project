@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import MatchesPage from './pages/MatchesPage';
 import MatchDetailPage from './pages/MatchDetailPage';
 import PredictionsPage from './pages/PredictionsPage';
+import AdminPage from './pages/AdminPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -13,6 +14,13 @@ import type { ReactNode } from 'react';
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { token } = useUser();
   if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: ReactNode }) {
+  const { token, user } = useUser();
+  if (!token) return <Navigate to="/login" replace />;
+  if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -30,6 +38,14 @@ function AppRoutes() {
               <ProtectedRoute>
                 <PredictionsPage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
             }
           />
           <Route path="/login" element={<LoginPage />} />

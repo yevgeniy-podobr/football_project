@@ -25,6 +25,11 @@ export default function Navbar() {
         <NavLink to="/predictions" className={linkClass}>
           Predictions
         </NavLink>
+        {user?.role === 'ADMIN' && (
+          <NavLink to="/admin" className={linkClass}>
+            Admin
+          </NavLink>
+        )}
 
         <div className="ml-auto flex items-center gap-3">
           {user ? (
@@ -32,6 +37,11 @@ export default function Navbar() {
               <span className="text-sm text-gray-400">
                 {user.username ?? user.email}
               </span>
+              {user.role === 'ADMIN' && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                  Admin
+                </span>
+              )}
               <button
                 onClick={logout}
                 className="text-sm px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium transition-colors"
