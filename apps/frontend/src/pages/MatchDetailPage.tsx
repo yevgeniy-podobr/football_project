@@ -1,10 +1,15 @@
-import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Button, Card, Form, InputNumber, Space, Spin, Tag, Typography, Alert,
+} from 'antd';
+import { LeftOutlined } from '@ant-design/icons';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import { CompBadge } from './MatchesPage';
 import type { Goal } from '../types';
+
+const { Text, Title } = Typography;
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -46,37 +51,46 @@ function GoalsSection({ goals, homeTeamId }: { goals: Goal[]; homeTeamId: number
   }
 
   function goalTag(type: Goal['type']) {
-    if (type === 'OWN_GOAL') return <span className="text-xs text-red-400 ml-1">OG</span>;
-    if (type === 'PENALTY')  return <span className="text-xs text-yellow-400 ml-1">P</span>;
+    if (type === 'OWN_GOAL') return <Tag color="error" style={{ fontSize: 11, margin: '0 0 0 4px' }}>OG</Tag>;
+    if (type === 'PENALTY')  return <Tag color="warning" style={{ fontSize: 11, margin: '0 0 0 4px' }}>P</Tag>;
     return null;
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
-      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Goals</h2>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+    <Card style={{ marginBottom: 24 }}>
+      <Text
+        type="secondary"
+        style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 16 }}
+      >
+        Goals
+      </Text>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
           {homeGoals.map((g, i) => (
-            <div key={i} className="flex items-baseline gap-1.5 text-sm">
-              <span className="text-gray-500 tabular-nums w-10 flex-shrink-0">{goalMin(g)}</span>
-              <span className="font-medium text-white">{g.scorer.name}</span>
+            <Space key={i} style={{ display: 'flex', marginBottom: 8 }}>
+              <Text type="secondary" style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40 }}>
+                {goalMin(g)}
+              </Text>
+              <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
               {goalTag(g.type)}
-            </div>
+            </Space>
           ))}
-          {homeGoals.length === 0 && <span className="text-gray-600 text-sm">—</span>}
+          {homeGoals.length === 0 && <Text type="secondary" style={{ fontSize: 13 }}>—</Text>}
         </div>
-        <div className="space-y-2">
+        <div style={{ textAlign: 'right' }}>
           {awayGoals.map((g, i) => (
-            <div key={i} className="flex items-baseline gap-1.5 text-sm justify-end text-right">
+            <Space key={i} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
               {goalTag(g.type)}
-              <span className="font-medium text-white">{g.scorer.name}</span>
-              <span className="text-gray-500 tabular-nums w-10 flex-shrink-0 text-left">{goalMin(g)}</span>
-            </div>
+              <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
+              <Text type="secondary" style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40, textAlign: 'left' }}>
+                {goalMin(g)}
+              </Text>
+            </Space>
           ))}
-          {awayGoals.length === 0 && <span className="text-gray-600 text-sm float-right">—</span>}
+          {awayGoals.length === 0 && <Text type="secondary" style={{ fontSize: 13 }}>—</Text>}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -89,6 +103,7 @@ export default function MatchDetailPage() {
   const comp = searchParams.get('comp');
   const qc = useQueryClient();
   const { user } = useUser();
+  const [form] = Form.useForm();
 
   const matchId = parseInt(id!, 10);
 
@@ -96,9 +111,6 @@ export default function MatchDetailPage() {
     queryKey: ['match', matchId],
     queryFn: () => matchesApi.getOne(matchId),
   });
-
-  const [home, setHome] = useState('');
-  const [away, setAway] = useState('');
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['match', matchId] });
@@ -122,8 +134,20 @@ export default function MatchDetailPage() {
     onSuccess: invalidate,
   });
 
-  if (isLoading) return <div className="text-center py-16 text-gray-400">Loading...</div>;
-  if (!match)   return <div className="text-center py-16 text-red-400">Match not found</div>;
+  if (isLoading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 0' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+  if (!match) {
+    return (
+      <div style={{ textAlign: 'center', padding: '64px 0' }}>
+        <Text type="danger">Match not found</Text>
+      </div>
+    );
+  }
 
   const prediction = user ? match.predictions.find((p) => p.userId === user.id) : null;
   const isFinished = match.status === 'FINISHED';
@@ -136,89 +160,113 @@ export default function MatchDetailPage() {
           : prediction.outcome === 'DRAW' ? 'Draw' : 'Away Win')
       : null;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const h = parseInt(home);
-    const a = parseInt(away);
-    if (isNaN(h) || isNaN(a) || h < 0 || a < 0 || !user) return;
-
+  const handleFinish = (values: { home: number; away: number }) => {
+    if (values.home == null || values.away == null || !user) return;
     if (prediction) {
-      updateMutation.mutate({ pid: prediction.id, data: { predictedHome: h, predictedAway: a } });
+      updateMutation.mutate({
+        pid: prediction.id,
+        data: { predictedHome: values.home, predictedAway: values.away },
+      });
     } else {
-      createMutation.mutate({ matchId, predictedHome: h, predictedAway: a });
+      createMutation.mutate({ matchId, predictedHome: values.home, predictedAway: values.away });
     }
-    setHome('');
-    setAway('');
+    form.resetFields();
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
   const goals     = (match.goals ?? []) as Goal[];
 
+  const predictionBgColor =
+    isCorrect === null
+      ? 'rgba(37, 99, 235, 0.1)'
+      : isCorrect
+      ? 'rgba(22, 163, 74, 0.1)'
+      : 'rgba(220, 38, 38, 0.1)';
+
+  const predictionBorderColor =
+    isCorrect === null ? '#1d4ed8' : isCorrect ? '#16a34a' : '#dc2626';
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <button
-        onClick={() => comp ? navigate(`/?comp=${comp}`) : navigate(-1)}
-        className="mb-6 text-gray-400 hover:text-white flex items-center gap-2 text-sm"
+    <div style={{ maxWidth: 672, margin: '0 auto' }}>
+      <Button
+        type="text"
+        icon={<LeftOutlined />}
+        onClick={() => (comp ? navigate(`/?comp=${comp}`) : navigate(-1))}
+        style={{ marginBottom: 24, paddingLeft: 0, color: 'rgba(255,255,255,0.45)' }}
       >
-        ← Back to matches
-      </button>
+        Back to matches
+      </Button>
 
       {/* Match card */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 mb-6">
+      <Card style={{ marginBottom: 24 }}>
         {/* Competition + date */}
-        <div className="flex items-center justify-center gap-2 mb-1">
-          <CompBadge code={match.competitionCode} />
-          <span className="text-sm text-gray-500">
-            {match.competition} {seasonLabel(match.season)}
-            {match.stage && match.stage !== 'REGULAR_SEASON' && (
-              <> · {match.stage.replace(/_/g, ' ')}</>
-            )}
-          </span>
-        </div>
-        <div className="text-center text-sm text-gray-500 mb-6">
-          {fullDate(match.matchDate)} · {kickoffTime(match.matchDate)}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <Space style={{ marginBottom: 4 }}>
+            <CompBadge code={match.competitionCode} />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {match.competition} {seasonLabel(match.season)}
+              {match.stage && match.stage !== 'REGULAR_SEASON' && (
+                <> · {match.stage.replace(/_/g, ' ')}</>
+              )}
+            </Text>
+          </Space>
+          <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>
+            {fullDate(match.matchDate)} · {kickoffTime(match.matchDate)}
+          </Text>
         </div>
 
         {/* Teams + score */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="text-center flex-1">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
             {match.homeTeam.crest && (
-              <img src={match.homeTeam.crest} alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
+              <img
+                src={match.homeTeam.crest}
+                alt=""
+                style={{ width: 64, height: 64, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+              />
             )}
-            <div className="font-bold text-lg leading-tight">{match.homeTeam.name}</div>
+            <Text strong style={{ fontSize: 17, display: 'block', lineHeight: 1.3 }}>
+              {match.homeTeam.name}
+            </Text>
             {match.homeTeam.shortName && (
-              <div className="text-xs text-gray-500 mt-0.5">{match.homeTeam.shortName}</div>
+              <Text type="secondary" style={{ fontSize: 12 }}>{match.homeTeam.shortName}</Text>
             )}
           </div>
 
-          <div className="text-center px-4 flex-shrink-0">
+          <div style={{ textAlign: 'center', flexShrink: 0, padding: '0 16px' }}>
             {showScore ? (
               <>
-                <div className="text-5xl font-black tabular-nums">
+                <Text style={{ fontSize: 48, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
                   {match.homeScore ?? 0} – {match.awayScore ?? 0}
-                </div>
+                </Text>
                 {match.halfTimeHome != null && (
-                  <div className="text-xs text-gray-500 mt-2">
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
                     HT {match.halfTimeHome} – {match.halfTimeAway}
-                  </div>
+                  </Text>
                 )}
               </>
             ) : (
-              <div className="text-3xl font-bold text-gray-400">VS</div>
+              <Text style={{ fontSize: 32, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>VS</Text>
             )}
           </div>
 
-          <div className="text-center flex-1">
+          <div style={{ textAlign: 'center', flex: 1 }}>
             {match.awayTeam.crest && (
-              <img src={match.awayTeam.crest} alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
+              <img
+                src={match.awayTeam.crest}
+                alt=""
+                style={{ width: 64, height: 64, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+              />
             )}
-            <div className="font-bold text-lg leading-tight">{match.awayTeam.name}</div>
+            <Text strong style={{ fontSize: 17, display: 'block', lineHeight: 1.3 }}>
+              {match.awayTeam.name}
+            </Text>
             {match.awayTeam.shortName && (
-              <div className="text-xs text-gray-500 mt-0.5">{match.awayTeam.shortName}</div>
+              <Text type="secondary" style={{ fontSize: 12 }}>{match.awayTeam.shortName}</Text>
             )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Goals */}
       {showScore && goals.length > 0 && (
@@ -226,106 +274,140 @@ export default function MatchDetailPage() {
       )}
 
       {/* Prediction card */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-        <h2 className="text-lg font-bold mb-4">Your Prediction</h2>
+      <Card>
+        <Title level={5} style={{ marginTop: 0 }}>Your Prediction</Title>
 
         {!user && (
-          <p className="text-gray-500 text-sm">Sign in via the navbar to make a prediction.</p>
+          <Text type="secondary">Sign in via the navbar to make a prediction.</Text>
         )}
 
         {user && prediction && (
-          <div className="mb-5">
+          <div style={{ marginBottom: 20 }}>
             <div
-              className={`p-4 rounded-xl border text-center ${
-                isCorrect === null
-                  ? 'border-blue-800 bg-blue-950/40'
-                  : isCorrect
-                  ? 'border-green-700 bg-green-950/40'
-                  : 'border-red-800 bg-red-950/40'
-              }`}
+              style={{
+                padding: 16,
+                borderRadius: 8,
+                border: `1px solid ${predictionBorderColor}`,
+                background: predictionBgColor,
+                textAlign: 'center',
+              }}
             >
-              <div className="text-3xl font-black tabular-nums">
+              <Text style={{ fontSize: 32, fontWeight: 900, fontVariantNumeric: 'tabular-nums', display: 'block' }}>
                 {prediction.predictedHome} – {prediction.predictedAway}
-              </div>
-              <div className="text-sm text-gray-400 mt-1">
+              </Text>
+              <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
                 {displayOutcome(prediction.predictedHome, prediction.predictedAway)}
-              </div>
+              </Text>
               {isCorrect !== null && (
-                <div className={`font-semibold mt-2 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                <Text
+                  style={{
+                    fontWeight: 600,
+                    marginTop: 8,
+                    display: 'block',
+                    color: isCorrect ? '#4ade80' : '#f87171',
+                  }}
+                >
                   {prediction.isExactScore
                     ? '★ Exact score!'
                     : isCorrect
                     ? '✓ Correct outcome'
                     : '✗ Incorrect'}
-                </div>
+                </Text>
               )}
               {isCorrect === null && (
-                <div className="text-xs text-gray-500 mt-2">Awaiting result</div>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                  Awaiting result
+                </Text>
               )}
             </div>
 
             {!isFinished && (
-              <button
+              <Button
+                danger
+                type="text"
+                size="small"
                 onClick={() => deleteMutation.mutate(prediction.id)}
-                disabled={deleteMutation.isPending}
-                className="mt-3 text-sm text-red-500 hover:text-red-400 disabled:opacity-50"
+                loading={deleteMutation.isPending}
+                style={{ marginTop: 12 }}
               >
                 Delete prediction
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         {user && !prediction && !isFinished && (
-          <p className="text-gray-500 text-sm mb-4">No prediction yet for this match.</p>
+          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+            No prediction yet for this match.
+          </Text>
         )}
 
         {user && !prediction && isFinished && (
-          <p className="text-gray-500 text-sm">This match is finished — predictions are closed.</p>
+          <Text type="secondary">This match is finished — predictions are closed.</Text>
         )}
 
         {user && !isFinished && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
-                <label className="block text-sm text-gray-400 mb-1.5">{match.homeTeam.name}</label>
-                <input
-                  type="number" min="0" max="20" value={home}
-                  onChange={(e) => setHome(e.target.value)}
-                  placeholder="0" required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-3 text-center text-2xl font-bold focus:outline-none focus:border-blue-500 transition-colors"
+          <Form form={form} onFinish={handleFinish} layout="vertical">
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
+              <Form.Item
+                label={match.homeTeam.name}
+                name="home"
+                rules={[{ required: true, message: ' ' }]}
+                style={{ flex: 1, marginBottom: 0 }}
+              >
+                <InputNumber
+                  min={0}
+                  max={20}
+                  placeholder="0"
+                  size="large"
+                  style={{ width: '100%', textAlign: 'center', fontSize: 24 }}
                 />
+              </Form.Item>
+
+              <div style={{ paddingBottom: 8 }}>
+                <Text style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>–</Text>
               </div>
-              <div className="text-gray-600 font-bold text-2xl pb-3">–</div>
-              <div className="flex-1">
-                <label className="block text-sm text-gray-400 mb-1.5">{match.awayTeam.name}</label>
-                <input
-                  type="number" min="0" max="20" value={away}
-                  onChange={(e) => setAway(e.target.value)}
-                  placeholder="0" required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-3 text-center text-2xl font-bold focus:outline-none focus:border-blue-500 transition-colors"
+
+              <Form.Item
+                label={match.awayTeam.name}
+                name="away"
+                rules={[{ required: true, message: ' ' }]}
+                style={{ flex: 1, marginBottom: 0 }}
+              >
+                <InputNumber
+                  min={0}
+                  max={20}
+                  placeholder="0"
+                  size="large"
+                  style={{ width: '100%', fontSize: 24 }}
                 />
-              </div>
+              </Form.Item>
             </div>
 
-            {home && away && (
-              <p className="text-sm text-gray-400 text-center">
-                Predicted outcome:{' '}
-                <span className="text-white font-medium">
-                  {displayOutcome(parseInt(home) || 0, parseInt(away) || 0)}
-                </span>
-              </p>
-            )}
+            <Form.Item shouldUpdate style={{ marginTop: 16, marginBottom: 16 }}>
+              {({ getFieldValue }) => {
+                const h = getFieldValue('home');
+                const a = getFieldValue('away');
+                if (h != null && a != null) {
+                  return (
+                    <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
+                      Predicted outcome:{' '}
+                      <Text strong style={{ color: 'inherit' }}>
+                        {displayOutcome(h, a)}
+                      </Text>
+                    </Text>
+                  );
+                }
+                return null;
+              }}
+            </Form.Item>
 
-            <button
-              type="submit" disabled={isPending}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-            >
-              {isPending ? 'Saving...' : prediction ? 'Update Prediction' : 'Save Prediction'}
-            </button>
-          </form>
+            <Button type="primary" htmlType="submit" loading={isPending} block size="large">
+              {prediction ? 'Update Prediction' : 'Save Prediction'}
+            </Button>
+          </Form>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

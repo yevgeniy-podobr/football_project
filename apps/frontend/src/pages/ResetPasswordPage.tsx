@@ -1,32 +1,25 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Form, Input, Button, Typography, Alert } from 'antd';
 import { authApi } from '../api/client';
-import { PasswordInput } from '../components/PasswordInput';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const [password, setPassword]   = useState('');
-  const [confirm, setConfirm]     = useState('');
-  const [error, setError]         = useState('');
-  const [loading, setLoading]     = useState(false);
-
-  const mismatch = confirm.length > 0 && password !== confirm;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (mismatch) return;
+  const handleFinish = async (values: { password: string }) => {
     setError('');
     setLoading(true);
     try {
-      await authApi.resetPassword(token, password);
+      await authApi.resetPassword(token, values.password);
       navigate('/login', { state: { notice: 'Password updated — please sign in.' } });
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Reset failed';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Reset failed';
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -35,56 +28,55 @@ export default function ResetPasswordPage() {
 
   if (!token) {
     return (
-      <div className="max-w-sm mx-auto mt-16 text-center">
-        <p className="text-red-400">Invalid reset link — no token found.</p>
-        <Link to="/forgot-password" className="text-blue-400 hover:underline text-sm mt-4 block">
-          Request a new link
-        </Link>
+      <div style={{ maxWidth: 360, margin: '64px auto 0', textAlign: 'center' }}>
+        <Alert message="Invalid reset link — no token found." type="error" showIcon />
+        <Typography.Paragraph style={{ marginTop: 16 }}>
+          <Link to="/forgot-password">Request a new link</Link>
+        </Typography.Paragraph>
       </div>
     );
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-16">
-      <h1 className="text-2xl font-bold mb-8 text-center">Set new password</h1>
+    <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
+      <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
+        Set new password
+      </Typography.Title>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">New password</label>
-          <PasswordInput
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            autoFocus
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-          />
-          <p className="text-xs text-gray-600 mt-1">At least 6 characters</p>
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">Confirm password</label>
-          <PasswordInput
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-            className={`w-full bg-gray-800 border rounded-lg px-3 py-2.5 focus:outline-none transition-colors ${
-              mismatch ? 'border-red-500 focus:border-red-500' : 'border-gray-700 focus:border-blue-500'
-            }`}
-          />
-          {mismatch && <p className="text-red-400 text-xs mt-1">Passwords do not match</p>}
-        </div>
-
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading || mismatch || !password}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors"
+      <Form layout="vertical" onFinish={handleFinish}>
+        <Form.Item
+          label="New password"
+          name="password"
+          rules={[{ required: true, min: 6, message: 'Password must be at least 6 characters' }]}
         >
-          {loading ? 'Updating...' : 'Update password'}
-        </button>
-      </form>
+          <Input.Password autoFocus />
+        </Form.Item>
+
+        <Form.Item
+          label="Confirm password"
+          name="confirm"
+          dependencies={['password']}
+          rules={[
+            { required: true, message: 'Please confirm your password' },
+            ({ getFieldValue }) => ({
+              validator(_, value) {
+                if (!value || getFieldValue('password') === value) return Promise.resolve();
+                return Promise.reject(new Error('Passwords do not match'));
+              },
+            }),
+          ]}
+        >
+          <Input.Password />
+        </Form.Item>
+
+        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" loading={loading} block>
+            Update password
+          </Button>
+        </Form.Item>
+      </Form>
     </div>
   );
 }

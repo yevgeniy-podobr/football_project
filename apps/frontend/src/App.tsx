@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ConfigProvider, Layout, theme } from 'antd';
 import { UserProvider, useUser } from './context/UserContext';
 import Navbar from './components/Navbar';
 import MatchesPage from './pages/MatchesPage';
@@ -10,6 +11,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import type { ReactNode } from 'react';
+
+const { Content } = Layout;
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { token } = useUser();
@@ -26,44 +29,48 @@ function AdminRoute({ children }: { children: ReactNode }) {
 
 function AppRoutes() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100">
+    <Layout style={{ minHeight: '100vh' }}>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-8">
-        <Routes>
-          <Route path="/" element={<MatchesPage />} />
-          <Route path="/matches/:id" element={<MatchDetailPage />} />
-          <Route
-            path="/predictions"
-            element={
-              <ProtectedRoute>
-                <PredictionsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminPage />
-              </AdminRoute>
-            }
-          />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-        </Routes>
-      </main>
-    </div>
+      <Content>
+        <div style={{ maxWidth: 1152, margin: '0 auto', padding: '32px 16px' }}>
+          <Routes>
+            <Route path="/" element={<MatchesPage />} />
+            <Route path="/matches/:id" element={<MatchDetailPage />} />
+            <Route
+              path="/predictions"
+              element={
+                <ProtectedRoute>
+                  <PredictionsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminPage />
+                </AdminRoute>
+              }
+            />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+          </Routes>
+        </div>
+      </Content>
+    </Layout>
   );
 }
 
 export default function App() {
   return (
-    <UserProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </UserProvider>
+    <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+      <UserProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </UserProvider>
+    </ConfigProvider>
   );
 }

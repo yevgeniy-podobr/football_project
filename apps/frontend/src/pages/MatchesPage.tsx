@@ -1,67 +1,71 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import {
+  Card, Tag, Tabs, Segmented, Table, Space, Typography, Spin, Alert,
+} from 'antd';
 import { configApi, matchesApi, standingsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import type { Match, MatchStatus, Outcome, Standing } from '../types';
 
+const { Text } = Typography;
+
 // ─── competition metadata ─────────────────────────────────────────────────────
 
 const COMPETITIONS = [
-  { code: 'CL',  label: 'Champions League', badge: 'UCL',    tabActive: 'bg-blue-700 text-white',   badgeClass: 'bg-blue-900 text-blue-300',   hasStages: true  },
-  { code: 'PL',  label: 'Premier League',   badge: 'PL',     tabActive: 'bg-violet-700 text-white', badgeClass: 'bg-violet-900 text-violet-300', hasStages: false },
-  { code: 'PD',  label: 'La Liga',          badge: 'LaLiga', tabActive: 'bg-orange-700 text-white', badgeClass: 'bg-orange-900 text-orange-300', hasStages: false },
-  { code: 'BL1', label: 'Bundesliga',       badge: 'BL',     tabActive: 'bg-red-700 text-white',    badgeClass: 'bg-red-900 text-red-300',      hasStages: false },
-  { code: 'SA',  label: 'Serie A',          badge: 'SA',     tabActive: 'bg-sky-700 text-white',    badgeClass: 'bg-sky-900 text-sky-300',      hasStages: false },
+  { code: 'CL',  label: 'Champions League', badge: 'UCL',    tagColor: 'blue',   hasStages: true  },
+  { code: 'PL',  label: 'Premier League',   badge: 'PL',     tagColor: 'purple', hasStages: false },
+  { code: 'PD',  label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange', hasStages: false },
+  { code: 'BL1', label: 'Bundesliga',       badge: 'BL',     tagColor: 'red',    hasStages: false },
+  { code: 'SA',  label: 'Serie A',          badge: 'SA',     tagColor: 'cyan',   hasStages: false },
 ] as const;
 
 type CompCode = typeof COMPETITIONS[number]['code'];
 
-export const COMP_META: Record<string, { label: string; badge: string; badgeClass: string }> = {
-  CL:  { label: 'Champions League', badge: 'UCL',    badgeClass: 'bg-blue-900 text-blue-300'   },
-  PL:  { label: 'Premier League',   badge: 'PL',     badgeClass: 'bg-violet-900 text-violet-300' },
-  PD:  { label: 'La Liga',          badge: 'LaLiga', badgeClass: 'bg-orange-900 text-orange-300' },
-  BL1: { label: 'Bundesliga',       badge: 'BL',     badgeClass: 'bg-red-900 text-red-300'     },
-  SA:  { label: 'Serie A',          badge: 'SA',     badgeClass: 'bg-sky-900 text-sky-300'     },
+export const COMP_META: Record<string, { label: string; badge: string; tagColor: string }> = {
+  CL:  { label: 'Champions League', badge: 'UCL',    tagColor: 'blue'   },
+  PL:  { label: 'Premier League',   badge: 'PL',     tagColor: 'purple' },
+  PD:  { label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange' },
+  BL1: { label: 'Bundesliga',       badge: 'BL',     tagColor: 'red'    },
+  SA:  { label: 'Serie A',          badge: 'SA',     tagColor: 'cyan'   },
 };
 
 export function CompBadge({ code }: { code: string }) {
   const meta = COMP_META[code];
   if (!meta) return null;
-  return (
-    <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ${meta.badgeClass}`}>
-      {meta.badge}
-    </span>
-  );
+  return <Tag color={meta.tagColor} style={{ margin: 0 }}>{meta.badge}</Tag>;
 }
 
-// ─── status filter tabs ───────────────────────────────────────────────────────
+// ─── status badge ─────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS: { label: string; value?: string }[] = [
-  { label: 'All' },
-  { label: 'Scheduled', value: 'SCHEDULED,TIMED' },
-  { label: 'Live',      value: 'IN_PLAY,PAUSED' },
-  { label: 'Finished',  value: 'FINISHED' },
-];
+const STATUS_TAG_COLOR: Record<string, string> = {
+  FINISHED:  'default',
+  IN_PLAY:   'success',
+  PAUSED:    'warning',
+  SCHEDULED: 'processing',
+  TIMED:     'processing',
+  POSTPONED: 'error',
+  CANCELLED: 'error',
+};
+
+function StatusBadge({ status }: { status: MatchStatus }) {
+  return (
+    <Tag color={STATUS_TAG_COLOR[status] ?? 'default'} style={{ fontSize: 11, margin: 0 }}>
+      {status.replace('_', ' ')}
+    </Tag>
+  );
+}
 
 // ─── stage metadata ───────────────────────────────────────────────────────────
 
 const STAGE_ORDER: Record<string, number> = {
-  FINAL:          0,
-  SEMI_FINALS:    1,
-  QUARTER_FINALS: 2,
-  LAST_16:        3,
-  PLAYOFFS:       4,
-  LEAGUE_STAGE:   5,
+  FINAL: 0, SEMI_FINALS: 1, QUARTER_FINALS: 2,
+  LAST_16: 3, PLAYOFFS: 4, LEAGUE_STAGE: 5,
 };
 
 const STAGE_LABEL: Record<string, string> = {
-  FINAL:          'Final',
-  SEMI_FINALS:    'Semi Finals',
-  QUARTER_FINALS: 'Quarter Finals',
-  LAST_16:        'Round of 16',
-  PLAYOFFS:       'Play-offs',
-  LEAGUE_STAGE:   'League Stage',
+  FINAL: 'Final', SEMI_FINALS: 'Semi Finals', QUARTER_FINALS: 'Quarter Finals',
+  LAST_16: 'Round of 16', PLAYOFFS: 'Play-offs', LEAGUE_STAGE: 'League Stage',
   REGULAR_SEASON: 'Regular Season',
 };
 
@@ -79,26 +83,6 @@ function seasonLabel(season: string) {
   return `${year}/${String(year + 1).slice(-2)}`;
 }
 
-// ─── status badge ─────────────────────────────────────────────────────────────
-
-const STATUS_STYLES: Record<string, string> = {
-  FINISHED:  'bg-gray-700 text-gray-200',
-  IN_PLAY:   'bg-green-700 text-green-100 animate-pulse',
-  PAUSED:    'bg-yellow-700 text-yellow-100',
-  SCHEDULED: 'bg-blue-900 text-blue-200',
-  TIMED:     'bg-blue-900 text-blue-200',
-  POSTPONED: 'bg-red-800 text-red-200',
-  CANCELLED: 'bg-red-950 text-red-300',
-};
-
-function StatusBadge({ status }: { status: MatchStatus }) {
-  return (
-    <span className={`text-xs px-2 py-1 rounded-full ${STATUS_STYLES[status] ?? 'bg-gray-700 text-gray-200'}`}>
-      {status.replace('_', ' ')}
-    </span>
-  );
-}
-
 // ─── prediction badge ─────────────────────────────────────────────────────────
 
 function predOutcome(home: number, away: number): Outcome {
@@ -109,67 +93,107 @@ function predOutcome(home: number, away: number): Outcome {
 
 function PredictionBadge({ p }: { p: Match['predictions'][number] }) {
   if (p.outcome === null) {
-    return <span className="text-xs text-blue-400 font-medium">{p.predictedHome}–{p.predictedAway}</span>;
+    return (
+      <Text style={{ color: '#60a5fa', fontSize: 12, fontWeight: 500 }}>
+        {p.predictedHome}–{p.predictedAway}
+      </Text>
+    );
   }
   const correct = predOutcome(p.predictedHome, p.predictedAway) === p.outcome;
-  if (p.isExactScore) return <span className="text-xs text-yellow-400 font-medium">★ Exact</span>;
+  if (p.isExactScore) {
+    return <Text style={{ color: '#facc15', fontSize: 12, fontWeight: 500 }}>★ Exact</Text>;
+  }
   return (
-    <span className={`text-xs font-medium ${correct ? 'text-green-400' : 'text-red-400'}`}>
+    <Text style={{ color: correct ? '#4ade80' : '#f87171', fontSize: 12, fontWeight: 500 }}>
       {correct ? '✓ Correct' : '✗ Wrong'}
-    </span>
+    </Text>
   );
 }
 
-// ─── single match row ─────────────────────────────────────────────────────────
+// ─── single match card ────────────────────────────────────────────────────────
 
 const SHOW_SCORE_STATUSES = new Set(['FINISHED', 'IN_PLAY', 'PAUSED']);
 
 function MatchRow({ match, userId }: { match: Match; userId?: number }) {
-  const showScore   = SHOW_SCORE_STATUSES.has(match.status);
+  const navigate = useNavigate();
+  const showScore = SHOW_SCORE_STATUSES.has(match.status);
   const myPrediction = userId != null ? match.predictions.find((p) => p.userId === userId) : null;
 
   return (
-    <Link
-      to={`/matches/${match.id}?comp=${match.competitionCode}`}
-      className="flex items-center justify-between bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-blue-600 transition-colors"
+    <Card
+      hoverable
+      onClick={() => navigate(`/matches/${match.id}?comp=${match.competitionCode}`)}
+      styles={{ body: { padding: '12px 16px' } }}
+      style={{ marginBottom: 8, cursor: 'pointer' }}
     >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
-          {match.homeTeam.crest && (
-            <img src={match.homeTeam.crest} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
-          )}
-          <span className="font-semibold truncate">{match.homeTeam.name}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Teams */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Space style={{ marginBottom: 6, display: 'flex' }}>
+            {match.homeTeam.crest && (
+              <img
+                src={match.homeTeam.crest}
+                alt=""
+                style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+              />
+            )}
+            <Text strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {match.homeTeam.name}
+            </Text>
+          </Space>
+          <Space style={{ display: 'flex' }}>
+            {match.awayTeam.crest && (
+              <img
+                src={match.awayTeam.crest}
+                alt=""
+                style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+              />
+            )}
+            <Text strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {match.awayTeam.name}
+            </Text>
+          </Space>
         </div>
-        <div className="flex items-center gap-2">
-          {match.awayTeam.crest && (
-            <img src={match.awayTeam.crest} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
-          )}
-          <span className="font-semibold truncate">{match.awayTeam.name}</span>
-        </div>
-      </div>
 
-      <div className="text-center px-6">
-        {showScore ? (
-          <span className="text-2xl font-black tabular-nums">
-            {match.homeScore ?? 0} – {match.awayScore ?? 0}
-          </span>
-        ) : (
-          <div className="text-gray-400 text-sm leading-tight">
-            <div>{new Date(match.matchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</div>
-            <div>{new Date(match.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
+        {/* Score / Date */}
+        <div style={{ textAlign: 'center', padding: '0 24px', flexShrink: 0 }}>
+          {showScore ? (
+            <Text style={{ fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
+              {match.homeScore ?? 0} – {match.awayScore ?? 0}
+            </Text>
+          ) : (
+            <div>
+              <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>
+                {new Date(match.matchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+              </Text>
+              <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>
+                {new Date(match.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </div>
+          )}
+        </div>
+
+        {/* Status + badges */}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ marginBottom: 4 }}>
+            <StatusBadge status={match.status} />
           </div>
-        )}
+          {match.stage && match.stage !== 'REGULAR_SEASON' && (
+            <div style={{ marginBottom: 4 }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>{stageLabel(match.stage)}</Text>
+            </div>
+          )}
+          {myPrediction && (
+            <div style={{ marginBottom: 4 }}>
+              <PredictionBadge p={myPrediction} />
+            </div>
+          )}
+          <div>
+            <CompBadge code={match.competitionCode} />
+          </div>
+        </div>
       </div>
-
-      <div className="text-right flex-shrink-0 space-y-1">
-        <div><StatusBadge status={match.status} /></div>
-        {match.stage && match.stage !== 'REGULAR_SEASON' && (
-          <div className="text-xs text-gray-500">{stageLabel(match.stage)}</div>
-        )}
-        {myPrediction && <div><PredictionBadge p={myPrediction} /></div>}
-        <div><CompBadge code={match.competitionCode} /></div>
-      </div>
-    </Link>
+    </Card>
   );
 }
 
@@ -181,11 +205,11 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
     if (!bySeason.has(m.season)) bySeason.set(m.season, []);
     bySeason.get(m.season)!.push(m);
   }
-  const seasons    = [...bySeason.keys()].sort((a, b) => b.localeCompare(a));
+  const seasons = [...bySeason.keys()].sort((a, b) => b.localeCompare(a));
   const multiSeason = seasons.length > 1;
 
   return (
-    <div className="space-y-8">
+    <div>
       {seasons.map((season) => {
         const seasonMatches = bySeason.get(season)!;
         const byStage = new Map<string, Match[]>();
@@ -197,25 +221,43 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
         const stages = sortedStages([...byStage.keys()]);
 
         return (
-          <div key={season}>
+          <div key={season} style={{ marginBottom: 32 }}>
             {multiSeason && (
-              <h2 className="text-base font-bold text-white mb-5">{seasonLabel(season)}</h2>
+              <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 20 }}>
+                {seasonLabel(season)}
+              </Text>
             )}
-            <div className="space-y-6">
-              {stages.map((stage) => (
-                <div key={stage}>
-                  <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-3 px-1">
-                    {stageLabel(stage)}
-                    <span className="ml-2 text-gray-600 normal-case tracking-normal font-normal">
-                      {byStage.get(stage)!.length} matches
-                    </span>
-                  </h3>
-                  <div className="space-y-2">
-                    {byStage.get(stage)!.map((m) => <MatchRow key={m.id} match={m} userId={userId} />)}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {stages.map((stage) => (
+              <div key={stage} style={{ marginBottom: 24 }}>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    display: 'block',
+                    marginBottom: 12,
+                    paddingLeft: 4,
+                  }}
+                >
+                  {stageLabel(stage)}
+                  <Text
+                    type="secondary"
+                    style={{
+                      marginLeft: 8,
+                      textTransform: 'none',
+                      letterSpacing: 'normal',
+                      fontWeight: 400,
+                    }}
+                  >
+                    {byStage.get(stage)!.length} matches
+                  </Text>
+                </Text>
+                {byStage.get(stage)!.map((m) => (
+                  <MatchRow key={m.id} match={m} userId={userId} />
+                ))}
+              </div>
+            ))}
           </div>
         );
       })}
@@ -225,94 +267,118 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
 
 // ─── standings table ──────────────────────────────────────────────────────────
 
-const CL_SPOTS   = 4;
+const CL_SPOTS = 4;
 const RELEGATION = 3;
 
 function StandingsTable({ standings, total }: { standings: Standing[]; total: number }) {
+  const columns = [
+    {
+      title: '#',
+      dataIndex: 'position',
+      width: 40,
+      render: (pos: number) => {
+        const isTop4 = pos <= CL_SPOTS;
+        const isRel = pos > total - RELEGATION;
+        return (
+          <Text
+            style={{
+              color: isTop4 ? '#4ade80' : isRel ? '#f87171' : '#6b7280',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            {pos}
+          </Text>
+        );
+      },
+    },
+    {
+      title: 'Team',
+      key: 'team',
+      render: (_: unknown, row: Standing) => (
+        <Space size={8}>
+          {row.team.crest && (
+            <img
+              src={row.team.crest}
+              alt=""
+              style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+            />
+          )}
+          <Text>{row.team.shortName ?? row.team.name}</Text>
+        </Space>
+      ),
+    },
+    { title: 'P', dataIndex: 'playedGames', width: 40, align: 'center' as const },
+    { title: 'W', dataIndex: 'won', width: 40, align: 'center' as const },
+    { title: 'D', dataIndex: 'draw', width: 40, align: 'center' as const },
+    { title: 'L', dataIndex: 'lost', width: 40, align: 'center' as const },
+    {
+      title: 'GD',
+      dataIndex: 'goalDifference',
+      width: 52,
+      align: 'center' as const,
+      render: (gd: number) => (
+        <Text style={{ color: gd > 0 ? '#4ade80' : gd < 0 ? '#f87171' : undefined }}>
+          {gd > 0 ? `+${gd}` : gd}
+        </Text>
+      ),
+    },
+    {
+      title: 'Pts',
+      dataIndex: 'points',
+      width: 52,
+      align: 'center' as const,
+      render: (pts: number) => <Text strong>{pts}</Text>,
+    },
+  ];
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-gray-500 text-xs uppercase tracking-widest border-b border-gray-800">
-            <th className="text-left pb-3 w-8">#</th>
-            <th className="text-left pb-3">Team</th>
-            <th className="text-center pb-3 w-10">P</th>
-            <th className="text-center pb-3 w-10">W</th>
-            <th className="text-center pb-3 w-10">D</th>
-            <th className="text-center pb-3 w-10">L</th>
-            <th className="text-center pb-3 w-12">GD</th>
-            <th className="text-center pb-3 w-12 font-bold text-gray-300">Pts</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-800/60">
-          {standings.map((row) => {
-            const isTop4      = row.position <= CL_SPOTS;
-            const isRelegation = row.position > total - RELEGATION;
-
-            return (
-              <tr
-                key={row.position}
-                className={`transition-colors ${
-                  isTop4
-                    ? 'bg-green-950/20 hover:bg-green-950/40'
-                    : isRelegation
-                    ? 'bg-red-950/20 hover:bg-red-950/40'
-                    : 'hover:bg-gray-800/40'
-                }`}
-              >
-                <td className="py-2.5 pr-3">
-                  <span className={`text-xs font-semibold ${
-                    isTop4 ? 'text-green-400' : isRelegation ? 'text-red-400' : 'text-gray-500'
-                  }`}>
-                    {row.position}
-                  </span>
-                </td>
-                <td className="py-2.5">
-                  <div className="flex items-center gap-2.5">
-                    {row.team.crest && (
-                      <img src={row.team.crest} alt="" className="w-5 h-5 object-contain flex-shrink-0" />
-                    )}
-                    <span className="font-medium text-white truncate">
-                      {row.team.shortName ?? row.team.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-2.5 text-center text-gray-400 tabular-nums">{row.playedGames}</td>
-                <td className="py-2.5 text-center text-gray-400 tabular-nums">{row.won}</td>
-                <td className="py-2.5 text-center text-gray-400 tabular-nums">{row.draw}</td>
-                <td className="py-2.5 text-center text-gray-400 tabular-nums">{row.lost}</td>
-                <td className="py-2.5 text-center tabular-nums">
-                  <span className={row.goalDifference > 0 ? 'text-green-400' : row.goalDifference < 0 ? 'text-red-400' : 'text-gray-400'}>
-                    {row.goalDifference > 0 ? `+${row.goalDifference}` : row.goalDifference}
-                  </span>
-                </td>
-                <td className="py-2.5 text-center font-bold text-white tabular-nums">{row.points}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-
-      {/* Legend */}
-      <div className="flex gap-4 mt-4 pt-4 border-t border-gray-800 text-xs text-gray-500">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-green-800 flex-shrink-0" />
-          Champions League
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-sm bg-red-900 flex-shrink-0" />
-          Relegation
-        </span>
-      </div>
+    <div>
+      <Table
+        columns={columns}
+        dataSource={standings}
+        rowKey="position"
+        pagination={false}
+        size="small"
+        onRow={(record) => ({
+          style: {
+            background:
+              record.position <= CL_SPOTS
+                ? 'rgba(0, 100, 0, 0.12)'
+                : record.position > total - RELEGATION
+                ? 'rgba(120, 0, 0, 0.12)'
+                : undefined,
+          },
+        })}
+      />
+      <Space style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <Space size={6}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#14532d' }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>Champions League</Text>
+        </Space>
+        <Space size={6}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#7f1d1d' }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>Relegation</Text>
+        </Space>
+      </Space>
     </div>
   );
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
+const STATUS_SEGMENTS = [
+  { label: 'All',       value: ''              },
+  { label: 'Scheduled', value: 'SCHEDULED,TIMED' },
+  { label: 'Live',      value: 'IN_PLAY,PAUSED'  },
+  { label: 'Finished',  value: 'FINISHED'        },
+];
+
 export default function MatchesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const competition = (COMPETITIONS.find(c => c.code === searchParams.get('comp'))?.code ?? 'CL') as CompCode;
+  const competition = (
+    COMPETITIONS.find((c) => c.code === searchParams.get('comp'))?.code ?? 'CL'
+  ) as CompCode;
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [stageFilter, setStageFilter]   = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
@@ -329,7 +395,7 @@ export default function MatchesPage() {
     staleTime: Infinity,
   });
 
-  const currentComp    = COMPETITIONS.find((c) => c.code === competition)!;
+  const currentComp = COMPETITIONS.find((c) => c.code === competition)!;
 
   const { data: standings, isLoading: standingsLoading, error: standingsError } = useQuery({
     queryKey: ['standings', competition],
@@ -345,172 +411,143 @@ export default function MatchesPage() {
     setView('matches');
   };
 
-  const handleStatusFilter = (value: string | undefined) => {
-    setStatusFilter(value);
+  const handleStatusFilter = (value: string) => {
+    setStatusFilter(value === '' ? undefined : value);
     setStageFilter(undefined);
   };
 
-  const isFinishedTab  = statusFilter === 'FINISHED';
+  const isFinishedTab = statusFilter === 'FINISHED';
 
-  const availableStages = isFinishedTab && currentComp.hasStages && matches
-    ? sortedStages([...new Set(matches.map((m) => m.stage ?? 'OTHER'))])
-    : [];
+  const availableStages =
+    isFinishedTab && currentComp.hasStages && matches
+      ? sortedStages([...new Set(matches.map((m) => m.stage ?? 'OTHER'))])
+      : [];
 
   const visibleMatches = stageFilter
     ? matches?.filter((m) => m.stage === stageFilter)
     : matches;
 
   const emptyMessage = () => {
-    if (statusFilter === 'IN_PLAY,PAUSED')   return 'No matches live right now.';
-    if (statusFilter === 'SCHEDULED,TIMED')  return 'No upcoming matches scheduled.';
+    if (statusFilter === 'IN_PLAY,PAUSED')  return 'No matches live right now.';
+    if (statusFilter === 'SCHEDULED,TIMED') return 'No upcoming matches scheduled.';
     if (stageFilter) return `No finished matches in the ${stageLabel(stageFilter)} stage.`;
     if (!config?.footballApiConfigured) {
       return (
         <>
-          <p className="text-lg mb-2">No matches found.</p>
-          <p className="text-sm">
-            Set <code className="bg-gray-800 px-1 rounded">FOOTBALL_DATA_API_KEY</code> in{' '}
-            <code className="bg-gray-800 px-1 rounded">apps/backend/.env</code> to fetch live data.
-          </p>
+          No matches found. Set <Text code>FOOTBALL_DATA_API_KEY</Text> in{' '}
+          <Text code>apps/backend/.env</Text> to fetch live data.
         </>
       );
     }
     return 'No matches found.';
   };
 
+  const competitionTabItems = COMPETITIONS.map((comp) => ({
+    key: comp.code,
+    label: (
+      <Space size={6}>
+        <Tag color={comp.tagColor} style={{ margin: 0 }}>{comp.badge}</Tag>
+        {comp.label}
+      </Space>
+    ),
+  }));
+
   return (
     <div>
-      {/* Competition tabs */}
-      <div className="flex gap-2 flex-wrap mb-6">
-        {COMPETITIONS.map((comp) => (
-          <button
-            key={comp.code}
-            onClick={() => handleCompetition(comp.code)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2 ${
-              competition === comp.code
-                ? comp.tabActive
-                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-            }`}
-          >
-            <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${
-              competition === comp.code ? 'bg-white/20 text-white' : comp.badgeClass
-            }`}>
-              {comp.badge}
-            </span>
-            {comp.label}
-          </button>
-        ))}
-      </div>
+      {/* Competition Tabs */}
+      <Tabs
+        activeKey={competition}
+        items={competitionTabItems}
+        onChange={(key) => handleCompetition(key as CompCode)}
+        tabBarExtraContent={
+          <Space wrap>
+            {!currentComp.hasStages && (
+              <Segmented
+                options={[{ label: 'Matches', value: 'matches' }, { label: 'Table', value: 'table' }]}
+                value={view}
+                onChange={(v) => setView(v as 'matches' | 'table')}
+              />
+            )}
+            {view === 'matches' && (
+              <Segmented
+                options={STATUS_SEGMENTS}
+                value={statusFilter ?? ''}
+                onChange={(v) => handleStatusFilter(v as string)}
+              />
+            )}
+          </Space>
+        }
+        renderTabBar={(props, DefaultTabBar) => (
+          <DefaultTabBar {...props} style={{ marginBottom: 16 }} />
+        )}
+      />
 
-      {/* Header row: title + view/filter controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <h1 className="text-2xl font-bold">{currentComp.label}</h1>
-        <div className="flex gap-2 flex-wrap">
-          {/* Table toggle — only for league competitions */}
-          {!currentComp.hasStages && (
-            <>
-              <button
-                onClick={() => setView('matches')}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  view === 'matches'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Matches
-              </button>
-              <button
-                onClick={() => setView('table')}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  view === 'table'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                }`}
-              >
-                Table
-              </button>
-            </>
-          )}
-
-          {/* Status filters — only in matches view */}
-          {view === 'matches' && STATUS_FILTERS.map((f) => (
-            <button
-              key={f.label}
-              onClick={() => handleStatusFilter(f.value)}
-              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                statusFilter === f.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Stage filter chips — only for UCL Finished tab */}
+      {/* Stage filter chips */}
       {view === 'matches' && isFinishedTab && currentComp.hasStages && availableStages.length > 1 && (
-        <div className="flex gap-2 flex-wrap mb-6">
-          <span className="text-xs text-gray-500 self-center mr-1">Stage:</span>
+        <Space wrap style={{ marginBottom: 16 }}>
+          <Text type="secondary" style={{ fontSize: 12 }}>Stage:</Text>
           {availableStages.map((stage) => (
-            <button
+            <Tag
               key={stage}
+              color={stageFilter === stage ? 'blue' : 'default'}
+              style={{ cursor: 'pointer' }}
               onClick={() => setStageFilter(stageFilter === stage ? undefined : stage)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                stageFilter === stage
-                  ? 'bg-gray-500 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
             >
               {stageLabel(stage)}
-            </button>
+            </Tag>
           ))}
-        </div>
+        </Space>
       )}
 
-      {/* ── Standings view ── */}
+      {/* Page title */}
+      <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>
+        {currentComp.label}
+      </Typography.Title>
+
+      {/* Standings view */}
       {view === 'table' && (
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <Card>
           {standingsLoading && (
-            <div className="text-center py-16 text-gray-400">Loading standings...</div>
-          )}
-          {standingsError && (
-            <div className="bg-red-950 border border-red-800 rounded-xl p-4 text-red-300">
-              Failed to load standings.
+            <div style={{ textAlign: 'center', padding: '64px 0' }}>
+              <Spin size="large" />
             </div>
           )}
+          {standingsError && <Alert message="Failed to load standings." type="error" />}
           {standings && standings.length > 0 && (
             <StandingsTable standings={standings} total={standings.length} />
           )}
-        </div>
+        </Card>
       )}
 
-      {/* ── Matches view ── */}
+      {/* Matches view */}
       {view === 'matches' && (
-        <>
-          {isLoading && <div className="text-center py-16 text-gray-400">Loading matches...</div>}
-
-          {error && (
-            <div className="bg-red-950 border border-red-800 rounded-xl p-4 text-red-300">
-              Failed to load matches. Make sure the backend is running on port 3000.
+        <div>
+          {isLoading && (
+            <div style={{ textAlign: 'center', padding: '64px 0' }}>
+              <Spin size="large" />
             </div>
           )}
-
+          {error && (
+            <Alert
+              message="Failed to load matches."
+              description="Make sure the backend is running on port 3000."
+              type="error"
+              showIcon
+            />
+          )}
           {!isLoading && !error && visibleMatches?.length === 0 && (
-            <div className="text-center py-16 text-gray-400">{emptyMessage()}</div>
+            <div style={{ textAlign: 'center', padding: '64px 0' }}>
+              <Text type="secondary">{emptyMessage()}</Text>
+            </div>
           )}
-
           {visibleMatches && visibleMatches.length > 0 && (
-            isFinishedTab && !stageFilter && currentComp.hasStages
-              ? <GroupedMatchList matches={visibleMatches} userId={user?.id} />
-              : (
-                <div className="space-y-3">
-                  {visibleMatches.map((m) => <MatchRow key={m.id} match={m} userId={user?.id} />)}
-                </div>
-              )
+            isFinishedTab && !stageFilter && currentComp.hasStages ? (
+              <GroupedMatchList matches={visibleMatches} userId={user?.id} />
+            ) : (
+              visibleMatches.map((m) => <MatchRow key={m.id} match={m} userId={user?.id} />)
+            )
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -4,7 +4,7 @@
 A fullstack football app with match data, standings, and predictions tracking with accuracy stats.
 
 ## Stack
-- **Frontend:** React + TypeScript + Vite + React Query + Recharts + TailwindCSS + lucide-react (icons)
+- **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons
 - **Backend:** NestJS + TypeScript
 - **Database:** PostgreSQL + Prisma
 - **Monorepo:** pnpm workspaces
@@ -57,7 +57,7 @@ football_project/
 - "← Back to matches" passes `?comp=<code>` in match links, restoring the correct competition tab on return
 - Cron job (`SchedulerService`) auto-resolves predictions every 5 minutes via `@nestjs/schedule`
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
-- Show/hide password toggle on all password fields (Login, Register, Reset Password) via shared `PasswordInput` component (lucide-react Eye/EyeOff)
+- Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
 
 ## Auth
 All endpoints and frontend pages are fully implemented and wired up.

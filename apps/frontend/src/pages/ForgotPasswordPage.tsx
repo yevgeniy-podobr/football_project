@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Form, Input, Button, Typography, Alert, Result } from 'antd';
 import { authApi } from '../api/client';
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail]     = useState('');
-  const [sent, setSent]       = useState(false);
-  const [error, setError]     = useState('');
+  const [sent, setSent] = useState(false);
+  const [sentEmail, setSentEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFinish = async (values: { email: string }) => {
     setError('');
     setLoading(true);
     try {
-      await authApi.forgotPassword(email);
+      await authApi.forgotPassword(values.email);
+      setSentEmail(values.email);
       setSent(true);
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { message?: string } } })
-          ?.response?.data?.message ?? 'Something went wrong';
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Something went wrong';
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -27,56 +28,52 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="max-w-sm mx-auto mt-16 text-center">
-        <div className="text-4xl mb-4">📧</div>
-        <h1 className="text-2xl font-bold mb-3">Check your email</h1>
-        <p className="text-gray-400 text-sm mb-6">
-          If an account exists for <span className="text-white">{email}</span>, we've sent a
-          password reset link. It expires in 15 minutes.
-        </p>
-        <Link to="/login" className="text-blue-400 hover:underline text-sm">
-          Back to sign in
-        </Link>
+      <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
+        <Result
+          icon={<span style={{ fontSize: 48 }}>📧</span>}
+          title="Check your email"
+          subTitle={
+            <>
+              If an account exists for <strong>{sentEmail}</strong>, we've sent a password reset
+              link. It expires in 15 minutes.
+            </>
+          }
+          extra={<Link to="/login">Back to sign in</Link>}
+        />
       </div>
     );
   }
 
   return (
-    <div className="max-w-sm mx-auto mt-16">
-      <h1 className="text-2xl font-bold mb-2 text-center">Forgot password?</h1>
-      <p className="text-gray-400 text-sm text-center mb-8">
+    <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
+      <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
+        Forgot password?
+      </Typography.Title>
+      <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 32 }}>
         Enter your email and we'll send you a reset link.
-      </p>
+      </Typography.Paragraph>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-gray-400 mb-1.5">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoFocus
-            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 transition-colors"
-          />
-        </div>
-
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 rounded-xl transition-colors"
+      <Form layout="vertical" onFinish={handleFinish}>
+        <Form.Item
+          label="Email"
+          name="email"
+          rules={[{ required: true, type: 'email', message: 'Enter a valid email' }]}
         >
-          {loading ? 'Sending...' : 'Send reset link'}
-        </button>
-      </form>
+          <Input autoFocus />
+        </Form.Item>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
-        <Link to="/login" className="text-blue-400 hover:underline">
-          Back to sign in
-        </Link>
-      </p>
+        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+
+        <Form.Item>
+          <Button type="primary" htmlType="submit" loading={loading} block>
+            Send reset link
+          </Button>
+        </Form.Item>
+      </Form>
+
+      <Typography.Paragraph style={{ textAlign: 'center' }}>
+        <Link to="/login">Back to sign in</Link>
+      </Typography.Paragraph>
     </div>
   );
 }

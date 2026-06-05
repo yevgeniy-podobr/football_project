@@ -5,9 +5,12 @@ import {
   Line, LineChart, Pie, PieChart,
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
+import { Card, Col, Row, Statistic, Button, Tag, Typography, Space } from 'antd';
 import { predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import type { Outcome, Prediction } from '../types';
+
+const { Text, Title } = Typography;
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -30,9 +33,18 @@ function isCorrect(p: Prediction): boolean {
 // ─── chart constants ─────────────────────────────────────────────────────────
 
 const PIE_COLORS = ['#22c55e', '#ef4444', '#6b7280'];
-const CHART_STYLE = { background: '#111827', border: '1px solid #374151', borderRadius: 8 };
+const CHART_STYLE = { background: '#1f1f1f', border: '1px solid #374151', borderRadius: 8 };
 const AXIS_TICK = { fill: '#9ca3af', fontSize: 12 };
 const GRID_DASH = { strokeDasharray: '3 3', stroke: '#374151' };
+
+// ─── outcome tag ─────────────────────────────────────────────────────────────
+
+function OutcomeTag({ p }: { p: Prediction }) {
+  if (p.outcome === null) return null;
+  if (p.isExactScore) return <Tag color="gold">★ Exact</Tag>;
+  const correct = isCorrect(p);
+  return correct ? <Tag color="success">✓ Correct</Tag> : <Tag color="error">✗ Wrong</Tag>;
+}
 
 // ─── component ───────────────────────────────────────────────────────────────
 
@@ -94,76 +106,92 @@ export default function PredictionsPage() {
   }));
 
   const kpis = [
-    { label: 'Predictions', value: predictions.length, color: 'text-white' },
-    { label: 'Correct',     value: correctCount,        color: 'text-green-400' },
-    { label: 'Exact scores', value: exactCount,         color: 'text-yellow-400' },
-    { label: 'Accuracy',    value: `${accuracy}%`,      color: 'text-blue-400' },
+    { label: 'Predictions', value: predictions.length, color: undefined },
+    { label: 'Correct',     value: correctCount,        color: '#4ade80' },
+    { label: 'Exact scores', value: exactCount,         color: '#facc15' },
+    { label: 'Accuracy',    value: `${accuracy}%`,      color: '#60a5fa' },
   ];
 
+  const predBorderColor = (p: Prediction) => {
+    if (p.outcome === null) return undefined;
+    return isCorrect(p) ? '#16a34a' : '#dc2626';
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">
-          {(user?.username ?? user?.email) + "'s Predictions"}
-        </h1>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+      <Title level={3} style={{ margin: 0 }}>
+        {(user?.username ?? user?.email) + "'s Predictions"}
+      </Title>
 
       {/* KPI strip */}
       {predictions.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Row gutter={[16, 16]}>
           {kpis.map((k) => (
-            <div key={k.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 text-center">
-              <div className={`text-3xl font-black ${k.color}`}>{k.value}</div>
-              <div className="text-sm text-gray-400 mt-1">{k.label}</div>
-            </div>
+            <Col xs={12} sm={6} key={k.label}>
+              <Card>
+                <Statistic
+                  title={k.label}
+                  value={k.value}
+                  valueStyle={k.color ? { color: k.color } : undefined}
+                />
+              </Card>
+            </Col>
           ))}
-        </div>
+        </Row>
       )}
 
       {/* Charts — only when there's something evaluated */}
       {resolved.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h2 className="font-semibold mb-4 text-gray-200">Results breakdown</h2>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90}
-                  dataKey="value" paddingAngle={3}>
-                  {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-                </Pie>
-                <Tooltip contentStyle={CHART_STYLE} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        <Row gutter={[24, 24]}>
+          <Col xs={24} md={12}>
+            <Card title="Results breakdown">
+              <ResponsiveContainer width="100%" height={220}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%" cy="50%"
+                    innerRadius={55} outerRadius={90}
+                    dataKey="value"
+                    paddingAngle={3}
+                  >
+                    {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={CHART_STYLE} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
 
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h2 className="font-semibold mb-4 text-gray-200">Accuracy by predicted outcome</h2>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={barData}>
-                <CartesianGrid {...GRID_DASH} />
-                <XAxis dataKey="name" tick={AXIS_TICK} />
-                <YAxis allowDecimals={false} tick={AXIS_TICK} />
-                <Tooltip contentStyle={CHART_STYLE} />
-                <Legend />
-                <Bar dataKey="Total"   fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          <Col xs={24} md={12}>
+            <Card title="Accuracy by predicted outcome">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={barData}>
+                  <CartesianGrid {...GRID_DASH} />
+                  <XAxis dataKey="name" tick={AXIS_TICK} />
+                  <YAxis allowDecimals={false} tick={AXIS_TICK} />
+                  <Tooltip contentStyle={CHART_STYLE} />
+                  <Legend />
+                  <Bar dataKey="Total"   fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+        </Row>
       )}
 
       {trendData.length > 1 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h2 className="font-semibold mb-4 text-gray-200">
-            Recent trend — last {trendData.length} evaluated
-          </h2>
+        <Card title={`Recent trend — last ${trendData.length} evaluated`}>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={trendData}>
               <CartesianGrid {...GRID_DASH} />
               <XAxis dataKey="name" tick={AXIS_TICK} />
-              <YAxis domain={[0, 1]} tickFormatter={(v) => (v === 1 ? 'Win' : 'Miss')} tick={AXIS_TICK} />
+              <YAxis
+                domain={[0, 1]}
+                tickFormatter={(v) => (v === 1 ? 'Win' : 'Miss')}
+                tick={AXIS_TICK}
+              />
               <Tooltip
                 contentStyle={CHART_STYLE}
                 formatter={(value: number, _n: string, props: { payload?: { label?: string } }) => [
@@ -171,100 +199,126 @@ export default function PredictionsPage() {
                   props.payload?.label ?? '',
                 ]}
               />
-              <Line type="monotone" dataKey="Result" stroke="#3b82f6" strokeWidth={2}
-                dot={{ fill: '#3b82f6', r: 4 }} activeDot={{ r: 6 }} />
+              <Line
+                type="monotone"
+                dataKey="Result"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={{ fill: '#3b82f6', r: 4 }}
+                activeDot={{ r: 6 }}
+              />
             </LineChart>
           </ResponsiveContainer>
-        </div>
+        </Card>
       )}
 
       {/* Prediction list */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">All predictions</h2>
+        <Title level={5} style={{ marginBottom: 16 }}>All predictions</Title>
 
         {predictions.length === 0 && (
-          <div className="text-center py-10 text-gray-400">
-            <p className="mb-1">No predictions yet.</p>
-            <p className="text-sm">
-              Go to a <Link to="/" className="text-blue-400 hover:underline">match</Link> to add
-              your first prediction.
-            </p>
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>
+              No predictions yet.
+            </Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Go to a <Link to="/">match</Link> to add your first prediction.
+            </Text>
           </div>
         )}
 
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {predictions.map((p) => {
-            const isFinished = p.match?.status === 'FINISHED';
+            const matchFinished = p.match?.status === 'FINISHED';
             const po = predictedOutcome(p.predictedHome, p.predictedAway);
             const correct = isCorrect(p);
-            const resolved = p.outcome !== null;
+            const isResolved = p.outcome !== null;
+            const borderColor = predBorderColor(p);
 
             return (
-              <div
+              <Card
                 key={p.id}
-                className={`bg-gray-900 border rounded-xl p-4 flex items-center justify-between gap-4 ${
-                  !resolved
-                    ? 'border-gray-800'
-                    : correct
-                    ? 'border-green-800'
-                    : 'border-red-900'
-                }`}
+                styles={{ body: { padding: '16px' } }}
+                style={borderColor ? { borderColor } : undefined}
               >
-                <div className="flex-1 min-w-0">
-                  <Link
-                    to={`/matches/${p.matchId}`}
-                    className="font-medium hover:text-blue-400 transition-colors truncate block"
-                  >
-                    {p.match?.homeTeam.name} vs {p.match?.awayTeam.name}
-                  </Link>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {p.match?.status} ·{' '}
-                    {new Date(p.match?.matchDate ?? '').toLocaleDateString('en-GB', {
-                      day: '2-digit', month: 'short', year: 'numeric',
-                    })}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {/* Match info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Link
+                      to={`/matches/${p.matchId}`}
+                      style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {p.match?.homeTeam.name} vs {p.match?.awayTeam.name}
+                    </Link>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {p.match?.status} ·{' '}
+                      {new Date(p.match?.matchDate ?? '').toLocaleDateString('en-GB', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                      })}
+                    </Text>
                   </div>
-                </div>
 
-                {/* Predicted score */}
-                <div className="text-center flex-shrink-0">
-                  <div className="font-bold text-lg tabular-nums">
-                    {p.predictedHome} – {p.predictedAway}
+                  {/* Predicted score */}
+                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                    <Text style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', display: 'block' }}>
+                      {p.predictedHome} – {p.predictedAway}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{OUTCOME_LABEL[po]}</Text>
                   </div>
-                  <div className="text-xs text-gray-400">{OUTCOME_LABEL[po]}</div>
-                </div>
 
-                {/* Actual result */}
-                {isFinished && p.match && (
-                  <div className="text-center flex-shrink-0">
-                    <div className="font-bold tabular-nums">
-                      {p.match.homeScore} – {p.match.awayScore}
+                  {/* Actual result */}
+                  {matchFinished && p.match && (
+                    <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 700,
+                          fontVariantNumeric: 'tabular-nums',
+                          display: 'block',
+                        }}
+                      >
+                        {p.match.homeScore} – {p.match.awayScore}
+                      </Text>
+                      {isResolved ? (
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: p.isExactScore ? '#facc15' : correct ? '#4ade80' : '#f87171',
+                          }}
+                        >
+                          {p.isExactScore ? '★ Exact' : correct ? '✓ Correct' : '✗ Wrong'}
+                        </Text>
+                      ) : (
+                        <Text type="secondary" style={{ fontSize: 12 }}>Pending</Text>
+                      )}
                     </div>
-                    {resolved ? (
-                      <div className={`text-xs font-semibold ${
-                        p.isExactScore
-                          ? 'text-yellow-400'
-                          : correct
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      }`}>
-                        {p.isExactScore ? '★ Exact' : correct ? '✓ Correct' : '✗ Wrong'}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-gray-500">Pending</div>
-                    )}
-                  </div>
-                )}
+                  )}
 
-                {!isFinished && (
-                  <button
-                    onClick={() => deleteMutation.mutate(p.id)}
-                    disabled={deleteMutation.isPending}
-                    className="text-gray-600 hover:text-red-400 transition-colors text-sm flex-shrink-0 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
+                  <Space>
+                    <OutcomeTag p={p} />
+                    {!matchFinished && (
+                      <Button
+                        danger
+                        size="small"
+                        type="text"
+                        onClick={() => deleteMutation.mutate(p.id)}
+                        loading={deleteMutation.isPending}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </Space>
+                </div>
+              </Card>
             );
           })}
         </div>
