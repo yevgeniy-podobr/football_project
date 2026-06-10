@@ -45,7 +45,8 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - CL matches grouped by stage on the Finished tab (Final, Semi Finals, Quarter Finals, etc.)
 - Stage filter chips on CL Finished tab only
 - Match detail page with goals (scorer, minute, OG/penalty tags), halftime score
-- Standings / league tables for WC, PL, PD, BL1, SA (with CL spots + relegation zone highlighting); WC uses group-stage standings from the API
+- Standings / league tables for PL, PD, BL1, SA (with CL spots + relegation zone row highlighting)
+- WC standings: all 12 groups (A–L) rendered in a responsive grid; top 2 per group highlighted green (advance to Round of 32); no relegation zone
 - JWT Authentication — fully implemented on backend and frontend
 - Password reset via email (Mailtrap SMTP, 15-minute token expiry)
 - Predictions: create, update, delete (blocked on finished matches)
@@ -125,6 +126,9 @@ All endpoints and frontend pages are fully implemented and wired up.
 
 ### StandingsCache
 - id, competitionCode (unique), data (Json), cachedAt
+- `data` shape for leagues: `StandingRow[]` (flat array)
+- `data` shape for WC: `GroupStandingRow[]` — `{ group: string; table: StandingRow[] }[]`, sorted A–L
+- Cache bust: WC entry is invalidated if `data[0]` lacks `group`+`table` keys (detects stale flat-format rows)
 
 ### PredictionStats
 - id, userId (unique)

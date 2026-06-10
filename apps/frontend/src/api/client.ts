@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AdminStats, AdminUserDetail, AdminUserRow, GlobalStats, Match, Prediction, PredictionStats, Standing, User } from '../types';
+import type { AdminStats, AdminUserDetail, AdminUserRow, GlobalStats, GroupStanding, Match, Prediction, PredictionStats, Standing, User } from '../types';
 
 const TOKEN_KEY = 'cl-predictor-token';
 
@@ -76,7 +76,7 @@ export const predictionsApi = {
 
 export const standingsApi = {
   get: (competitionCode: string) =>
-    api.get<Standing[]>(`/standings/${competitionCode}`).then((r) => r.data),
+    api.get<Standing[] | GroupStanding[]>(`/standings/${competitionCode}`).then((r) => r.data),
 };
 
 export const statsApi = {

@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import { configApi, matchesApi, standingsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
-import type { Match, MatchStatus, Outcome, Standing } from '../types';
+import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../types';
 
 const { Text } = Typography;
 
@@ -271,20 +271,43 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
 
 const CL_SPOTS = 4;
 const RELEGATION = 3;
+const WC_ADVANCE = 2;
 
-function StandingsTable({ standings, total }: { standings: Standing[]; total: number }) {
+function isGroupStandings(data: Standing[] | GroupStanding[]): data is GroupStanding[] {
+  return data.length > 0 && 'group' in data[0];
+}
+
+function groupLabel(group: string) {
+  return group.replace(/^GROUP_/, 'Group ');
+}
+
+interface StandingsTableProps {
+  standings: Standing[];
+  total: number;
+  advancementSpots?: number;
+  showRelegation?: boolean;
+  advancementLabel?: string;
+}
+
+function StandingsTable({
+  standings,
+  total,
+  advancementSpots = CL_SPOTS,
+  showRelegation = true,
+  advancementLabel = 'Champions League',
+}: StandingsTableProps) {
   const columns = [
     {
       title: '#',
       dataIndex: 'position',
       width: 40,
       render: (pos: number) => {
-        const isTop4 = pos <= CL_SPOTS;
-        const isRel = pos > total - RELEGATION;
+        const isAdv = pos <= advancementSpots;
+        const isRel = showRelegation && pos > total - RELEGATION;
         return (
           <Text
             style={{
-              color: isTop4 ? '#4ade80' : isRel ? '#f87171' : '#6b7280',
+              color: isAdv ? '#4ade80' : isRel ? '#f87171' : '#6b7280',
               fontSize: 12,
               fontWeight: 600,
             }}
@@ -345,9 +368,9 @@ function StandingsTable({ standings, total }: { standings: Standing[]; total: nu
         onRow={(record) => ({
           style: {
             background:
-              record.position <= CL_SPOTS
+              record.position <= advancementSpots
                 ? 'rgba(0, 100, 0, 0.12)'
-                : record.position > total - RELEGATION
+                : showRelegation && record.position > total - RELEGATION
                 ? 'rgba(120, 0, 0, 0.12)'
                 : undefined,
           },
@@ -356,13 +379,44 @@ function StandingsTable({ standings, total }: { standings: Standing[]; total: nu
       <Space style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
         <Space size={6}>
           <div style={{ width: 10, height: 10, borderRadius: 2, background: '#14532d' }} />
-          <Text type="secondary" style={{ fontSize: 12 }}>Champions League</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{advancementLabel}</Text>
         </Space>
-        <Space size={6}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: '#7f1d1d' }} />
-          <Text type="secondary" style={{ fontSize: 12 }}>Relegation</Text>
-        </Space>
+        {showRelegation && (
+          <Space size={6}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: '#7f1d1d' }} />
+            <Text type="secondary" style={{ fontSize: 12 }}>Relegation</Text>
+          </Space>
+        )}
       </Space>
+    </div>
+  );
+}
+
+function WCGroupsView({ groups }: { groups: GroupStanding[] }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(540px, 1fr))',
+        gap: 16,
+      }}
+    >
+      {groups.map((g) => (
+        <Card
+          key={g.group}
+          title={<Text strong>{groupLabel(g.group)}</Text>}
+          styles={{ body: { padding: '0 0 12px' } }}
+          size="small"
+        >
+          <StandingsTable
+            standings={g.table}
+            total={g.table.length}
+            advancementSpots={WC_ADVANCE}
+            showRelegation={false}
+            advancementLabel="Advance to Round of 32"
+          />
+        </Card>
+      ))}
     </div>
   );
 }
@@ -399,7 +453,7 @@ export default function MatchesPage() {
 
   const currentComp = COMPETITIONS.find((c) => c.code === competition)!;
 
-  const { data: standings, isLoading: standingsLoading, error: standingsError } = useQuery({
+  const { data: standings, isLoading: standingsLoading, error: standingsError } = useQuery<Standing[] | GroupStanding[]>({
     queryKey: ['standings', competition],
     queryFn: () => standingsApi.get(competition),
     enabled: view === 'table' && !currentComp.hasStages,
@@ -508,7 +562,7 @@ export default function MatchesPage() {
 
       {/* Standings view */}
       {view === 'table' && (
-        <Card>
+        <div>
           {standingsLoading && (
             <div style={{ textAlign: 'center', padding: '64px 0' }}>
               <Spin size="large" />
@@ -516,9 +570,15 @@ export default function MatchesPage() {
           )}
           {standingsError && <Alert message="Failed to load standings." type="error" />}
           {standings && standings.length > 0 && (
-            <StandingsTable standings={standings} total={standings.length} />
+            isGroupStandings(standings) ? (
+              <WCGroupsView groups={standings} />
+            ) : (
+              <Card>
+                <StandingsTable standings={standings as Standing[]} total={standings.length} />
+              </Card>
+            )
           )}
-        </Card>
+        </div>
       )}
 
       {/* Matches view */}

@@ -108,6 +108,11 @@ export interface Standing {
   form?: string | null;
 }
 
+export interface GroupStanding {
+  group: string;
+  table: Standing[];
+}
+
 export interface GlobalStats {
   users: number;
   total: number;

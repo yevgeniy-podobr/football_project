@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import axios from 'axios';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -13,10 +14,49 @@ const COMPETITIONS = [
   { code: 'PD',  name: 'La Liga' },
   { code: 'BL1', name: 'Bundesliga' },
   { code: 'SA',  name: 'Serie A' },
-  { code: 'WC', name: 'FIFA World Cup' },
+  { code: 'WC',  name: 'FIFA World Cup' },
 ] as const;
 
 type CompCode = typeof COMPETITIONS[number]['code'];
+
+// football-data.org /competitions/:code/matches response shapes
+interface ApiTeam {
+  id: number;
+  name: string;
+  shortName: string | null;
+  crest: string | null;
+}
+
+interface ApiGoal {
+  minute: number;
+  injuryTime: number | null;
+  type: string;
+  team: { id: number; name: string };
+  scorer: { id: number; name: string };
+  assist: { id: number; name: string } | null;
+}
+
+interface ApiMatch {
+  id: number;
+  utcDate: string;
+  status: string;
+  stage: string | null;
+  group: string | null;
+  homeTeam: ApiTeam;
+  awayTeam: ApiTeam;
+  score: {
+    fullTime: { home: number | null; away: number | null };
+    halfTime: { home: number | null; away: number | null };
+    winner: string | null;
+  };
+  goals: ApiGoal[];
+  season: { startDate: string };
+}
+
+interface ApiMatchesResponse {
+  competition: { name: string } | null;
+  matches: ApiMatch[];
+}
 
 @Injectable()
 export class MatchesService {
@@ -30,13 +70,13 @@ export class MatchesService {
     code: CompCode,
     now: Date,
   ): Promise<number> {
-    const { data } = await axios.get(
+    const { data } = await axios.get<ApiMatchesResponse>(
       `https://api.football-data.org/v4/competitions/${code}/matches`,
       { headers: { 'X-Auth-Token': apiKey }, params: { limit: 100 } },
     );
 
     const rawMatches = (data.matches ?? []).filter(
-      (m: any) => m.homeTeam?.id != null && m.awayTeam?.id != null,
+      (m) => m.homeTeam?.id != null && m.awayTeam?.id != null,
     );
 
     // Deduplicate teams
@@ -70,18 +110,21 @@ export class MatchesService {
       for (const m of rawMatches) {
         const homeTeamId = idMap.get(m.homeTeam.id)!;
         const awayTeamId = idMap.get(m.awayTeam.id)!;
+        // goals is stored as a Prisma Json field; cast is required because TypeScript
+        // cannot automatically prove ApiGoal[] satisfies Prisma's InputJsonValue index type
+        const goalsJson = (m.goals ?? []) as unknown as Prisma.InputJsonValue;
 
         await tx.match.upsert({
           where:  { externalId: m.id },
           update: {
-            status:      m.status,
-            homeScore:   m.score?.fullTime?.home ?? null,
-            awayScore:   m.score?.fullTime?.away ?? null,
+            status:       m.status,
+            homeScore:    m.score?.fullTime?.home ?? null,
+            awayScore:    m.score?.fullTime?.away ?? null,
             halfTimeHome: m.score?.halfTime?.home ?? null,
             halfTimeAway: m.score?.halfTime?.away ?? null,
-            winner:      m.score?.winner ?? null,
-            goals:       m.goals ?? [],
-            cachedAt:    now,
+            winner:       m.score?.winner ?? null,
+            goals:        goalsJson,
+            cachedAt:     now,
           },
           create: {
             externalId:      m.id,
@@ -96,7 +139,7 @@ export class MatchesService {
             halfTimeHome:    m.score?.halfTime?.home ?? null,
             halfTimeAway:    m.score?.halfTime?.away ?? null,
             winner:          m.score?.winner ?? null,
-            goals:           m.goals ?? [],
+            goals:           goalsJson,
             competition:     data.competition?.name ?? code,
             competitionCode: code,
             season:          String(m.season?.startDate?.split('-')[0] ?? '2024'),
@@ -128,8 +171,8 @@ export class MatchesService {
       try {
         const n = await this.syncCompetition(apiKey, comp.code, now);
         totalCount += n;
-      } catch (err: any) {
-        console.error(`Sync failed for ${comp.code}:`, err.message);
+      } catch (err: unknown) {
+        console.error(`Sync failed for ${comp.code}:`, err instanceof Error ? err.message : String(err));
       }
     }
 

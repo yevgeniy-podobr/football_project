@@ -1,9 +1,58 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const ALLOWED = new Set(['PL', 'PD', 'BL1', 'SA', 'WC']);
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// football-data.org /competitions/:code/standings response shapes
+interface ApiStandingEntry {
+  position: number;
+  team: { id: number; name: string; shortName: string | null; crest: string | null };
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  form: string | null;
+}
+
+interface ApiStandingGroup {
+  stage: string;
+  type: string;
+  group: string | null;
+  table: ApiStandingEntry[];
+}
+
+interface ApiStandingsResponse {
+  standings: ApiStandingGroup[];
+}
+
+// Shapes stored in and returned from StandingsCache
+export interface StandingRow {
+  position: number;
+  team: { id: number; name: string; shortName: string | null; crest: string | null };
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  form: string | null;
+}
+
+export interface GroupStandingRow {
+  group: string;
+  table: StandingRow[];
+}
+
+type CachedStandings = StandingRow[] | GroupStandingRow[];
 
 @Injectable()
 export class StandingsService {
@@ -20,22 +69,32 @@ export class StandingsService {
       where: { competitionCode },
     });
 
-    if (cached && Date.now() - new Date(cached.cachedAt).getTime() < ONE_DAY_MS) {
-      return cached.data;
+    // Prisma returns Json as JsonValue; we know the stored shape is CachedStandings
+    const cachedData = cached?.data as unknown as CachedStandings | undefined;
+    const cacheValid =
+      cached &&
+      Date.now() - new Date(cached.cachedAt).getTime() < ONE_DAY_MS &&
+      Array.isArray(cachedData) &&
+      cachedData.length > 0 &&
+      // WC stores [{group, table}] — reject old flat [{position,...}] cache entries
+      (competitionCode !== 'WC' || ('group' in cachedData[0] && 'table' in cachedData[0]));
+    if (cacheValid) {
+      return cachedData!;
     }
 
     const apiKey = process.env.FOOTBALL_DATA_API_KEY;
     if (!apiKey) throw new BadRequestException('Football API key not configured');
 
-    const { data } = await axios.get(
+    const { data } = await axios.get<ApiStandingsResponse>(
       `https://api.football-data.org/v4/competitions/${competitionCode}/standings`,
       { headers: { 'X-Auth-Token': apiKey } },
     );
 
-    const table =
-      (data.standings as any[])?.find((s) => s.type === 'TOTAL')?.table ?? [];
+    const allGroups = (data.standings ?? []).filter(
+      (s) => s.type === 'TOTAL',
+    );
 
-    const result = table.map((entry: any) => ({
+    const mapEntry = (entry: ApiStandingEntry): StandingRow => ({
       position: entry.position,
       team: {
         id: entry.team.id,
@@ -52,12 +111,29 @@ export class StandingsService {
       goalsAgainst: entry.goalsAgainst,
       goalDifference: entry.goalDifference,
       form: entry.form ?? null,
-    }));
+    });
+
+    console.log(`[StandingsService] ${competitionCode}: API returned ${allGroups.length} group(s)`);
+
+    // Multi-group competitions (WC): return GroupStandingRow[]
+    // Single-table competitions (leagues): return StandingRow[]
+    const result: CachedStandings =
+      allGroups.length > 1
+        ? [...allGroups]
+            .sort((a, b) => (a.group ?? '').localeCompare(b.group ?? ''))
+            .map((g) => ({ group: g.group!, table: g.table.map(mapEntry) }))
+        : (allGroups[0]?.table ?? []).map(mapEntry);
+
+    console.log(`[StandingsService] ${competitionCode}: saving ${result.length} entries to cache`);
+
+    // CachedStandings is a valid JSON structure; cast required because TypeScript cannot
+    // automatically prove named-property interfaces satisfy Prisma's InputJsonValue index type
+    const resultJson = result as unknown as Prisma.InputJsonValue;
 
     await this.prisma.standingsCache.upsert({
       where: { competitionCode },
-      update: { data: result, cachedAt: new Date() },
-      create: { competitionCode, data: result, cachedAt: new Date() },
+      update: { data: resultJson, cachedAt: new Date() },
+      create: { competitionCode, data: resultJson, cachedAt: new Date() },
     });
 
     return result;
