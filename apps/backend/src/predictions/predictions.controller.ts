@@ -16,7 +16,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import type { CreatePredictionDto } from './dto/create-prediction.dto';
 import type { UpdatePredictionDto } from './dto/update-prediction.dto';
-import type { PredictionsService } from './predictions.service';
+import { PredictionsService } from './predictions.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('predictions')

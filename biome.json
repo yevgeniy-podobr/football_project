@@ -55,6 +55,18 @@
       "trailingCommas": "none"
     }
   },
+  "overrides": [
+    {
+      "includes": ["apps/backend/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    }
+  ],
   "assist": {
     "enabled": true,
     "actions": {

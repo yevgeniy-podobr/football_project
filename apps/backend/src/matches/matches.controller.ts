@@ -1,5 +1,5 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import type { MatchesService } from './matches.service';
+import { MatchesService } from './matches.service';
 
 @Controller('matches')
 export class MatchesController {

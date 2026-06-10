@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { IsEmail, IsString, MinLength } from 'class-validator';
-import type { AuthService } from './auth.service';
+import { AuthService } from './auth.service';
 import type { JwtPayload } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 

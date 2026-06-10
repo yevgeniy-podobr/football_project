@@ -5,8 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Outcome } from '@prisma/client';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { StatsService } from '../stats/stats.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { StatsService } from '../stats/stats.service';
 import type { CreatePredictionDto } from './dto/create-prediction.dto';
 import type { UpdatePredictionDto } from './dto/update-prediction.dto';
 
