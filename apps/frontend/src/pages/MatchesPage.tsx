@@ -13,6 +13,7 @@ const { Text } = Typography;
 // ─── competition metadata ─────────────────────────────────────────────────────
 
 const COMPETITIONS = [
+  { code: 'WC',  label: 'FIFA World Cup',   badge: 'WC',     tagColor: 'green',  hasStages: false },
   { code: 'CL',  label: 'Champions League', badge: 'UCL',    tagColor: 'blue',   hasStages: true  },
   { code: 'PL',  label: 'Premier League',   badge: 'PL',     tagColor: 'purple', hasStages: false },
   { code: 'PD',  label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange', hasStages: false },
@@ -23,6 +24,7 @@ const COMPETITIONS = [
 type CompCode = typeof COMPETITIONS[number]['code'];
 
 export const COMP_META: Record<string, { label: string; badge: string; tagColor: string }> = {
+  WC:  { label: 'FIFA World Cup',   badge: 'WC',     tagColor: 'green'  },
   CL:  { label: 'Champions League', badge: 'UCL',    tagColor: 'blue'   },
   PL:  { label: 'Premier League',   badge: 'PL',     tagColor: 'purple' },
   PD:  { label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange' },

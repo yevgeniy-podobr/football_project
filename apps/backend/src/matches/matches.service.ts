@@ -13,6 +13,7 @@ const COMPETITIONS = [
   { code: 'PD',  name: 'La Liga' },
   { code: 'BL1', name: 'Bundesliga' },
   { code: 'SA',  name: 'Serie A' },
+  { code: 'WC', name: 'FIFA World Cup' },
 ] as const;
 
 type CompCode = typeof COMPETITIONS[number]['code'];

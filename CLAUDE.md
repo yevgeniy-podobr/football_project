@@ -25,21 +25,27 @@ football_project/
 ```
 
 ## Competitions (football-data.org free tier)
-| Name | Code |
-|------|------|
-| UEFA Champions League | CL |
-| Premier League (England) | PL |
-| La Liga (Spain) | PD |
-| Bundesliga (Germany) | BL1 |
-| Serie A (Italy) | SA |
+| Name | Code | Badge | Tab color |
+|------|------|-------|-----------|
+| FIFA World Cup 2026 | WC | WC | green |
+| UEFA Champions League | CL | UCL | blue |
+| Premier League (England) | PL | PL | purple |
+| La Liga (Spain) | PD | LaLiga | orange |
+| Bundesliga (Germany) | BL1 | BL | red |
+| Serie A (Italy) | SA | SA | cyan |
+
+### Competition display flags (`hasStages`)
+Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array that controls rendering:
+- `hasStages: true` — **CL only**: finished matches grouped by stage, stage filter chips shown, no Matches/Table toggle
+- `hasStages: false` — **WC + all leagues**: flat match list, Matches/Table toggle available, stage filter chips hidden
 
 ## Features Implemented
-- Multi-competition tabs (CL, PL, PD, BL1, SA) with color-coded badges
+- Multi-competition tabs (WC, CL, PL, PD, BL1, SA) with color-coded badges; WC is the first tab
 - Matches list with All / Scheduled / Live / Finished tabs
-- UCL matches grouped by stage (Final, Semi Finals, Quarter Finals, etc.)
-- Stage filter chips on UCL Finished tab
+- CL matches grouped by stage on the Finished tab (Final, Semi Finals, Quarter Finals, etc.)
+- Stage filter chips on CL Finished tab only
 - Match detail page with goals (scorer, minute, OG/penalty tags), halftime score
-- Standings / league tables for PL, PD, BL1, SA (with CL spots + relegation zone highlighting)
+- Standings / league tables for WC, PL, PD, BL1, SA (with CL spots + relegation zone highlighting); WC uses group-stage standings from the API
 - JWT Authentication — fully implemented on backend and frontend
 - Password reset via email (Mailtrap SMTP, 15-minute token expiry)
 - Predictions: create, update, delete (blocked on finished matches)
