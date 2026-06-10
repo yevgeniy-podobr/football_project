@@ -1,12 +1,12 @@
 import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
-import { MatchesService } from './matches.service';
+import type { MatchesService } from './matches.service';
 
 @Controller('matches')
 export class MatchesController {
   constructor(private readonly matchesService: MatchesService) {}
 
   @Get()
-  findAll(@Query('status') status?: string, @Query('competition') competition?: string) { 
+  findAll(@Query('status') status?: string, @Query('competition') competition?: string) {
     return this.matchesService.findAll(status, competition);
   }
 

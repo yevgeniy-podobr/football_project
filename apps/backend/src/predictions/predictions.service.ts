@@ -5,10 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Outcome } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { StatsService } from '../stats/stats.service';
-import { CreatePredictionDto } from './dto/create-prediction.dto';
-import { UpdatePredictionDto } from './dto/update-prediction.dto';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { StatsService } from '../stats/stats.service';
+import type { CreatePredictionDto } from './dto/create-prediction.dto';
+import type { UpdatePredictionDto } from './dto/update-prediction.dto';
 
 @Injectable()
 export class PredictionsService {

@@ -4,9 +4,9 @@ import {
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
-import { JwtPayload } from './jwt.strategy';
+import type { Reflector } from '@nestjs/core';
+import type { Role } from '@prisma/client';
+import type { JwtPayload } from './jwt.strategy';
 import { ROLES_KEY } from './roles.decorator';
 
 @Injectable()

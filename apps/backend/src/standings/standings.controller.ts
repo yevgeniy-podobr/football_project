@@ -1,5 +1,5 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { StandingsService } from './standings.service';
+import type { StandingsService } from './standings.service';
 
 @Controller('standings')
 export class StandingsController {

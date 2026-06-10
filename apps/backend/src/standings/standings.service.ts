@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import axios from 'axios';
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
 
 const ALLOWED = new Set(['PL', 'PD', 'BL1', 'SA', 'WC']);
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;

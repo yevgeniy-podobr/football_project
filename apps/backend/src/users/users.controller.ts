@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
-import { UsersService } from './users.service';
+import type { UsersService } from './users.service';
 
 class UpsertUserDto {
   @IsEmail()

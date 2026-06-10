@@ -5,13 +5,13 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { Role } from '@prisma/client';
+import type { ConfigService } from '@nestjs/config';
+import type { JwtService } from '@nestjs/jwt';
+import type { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
-import { UsersService } from '../users/users.service';
-import { JwtPayload } from './jwt.strategy';
+import type { UsersService } from '../users/users.service';
+import type { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {

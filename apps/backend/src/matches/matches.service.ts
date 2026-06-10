@@ -1,9 +1,9 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import axios from 'axios';
-import { Cache } from 'cache-manager';
-import { PrismaService } from '../prisma/prisma.service';
+import type { Cache } from 'cache-manager';
+import type { PrismaService } from '../prisma/prisma.service';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const CACHE_TTL_MS = 5 * 60 * 1000;

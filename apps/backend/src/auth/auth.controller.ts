@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { IsEmail, IsString, MinLength } from 'class-validator';
-import { AuthService } from './auth.service';
-import { JwtPayload } from './jwt.strategy';
+import type { AuthService } from './auth.service';
+import type { JwtPayload } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 class RegisterDto {
