@@ -1,5 +1,5 @@
-import { Layout, Menu, Button, Space, Typography, Tag } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Button, Layout, Menu, Space, Tag, Typography } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 
 const { Header } = Layout;
@@ -36,7 +36,10 @@ export default function Navbar() {
         borderBottom: '1px solid rgba(255,255,255,0.08)',
       }}
     >
-      <Text strong style={{ color: '#60a5fa', fontSize: 18, whiteSpace: 'nowrap', marginRight: 24 }}>
+      <Text
+        strong
+        style={{ color: '#60a5fa', fontSize: 18, whiteSpace: 'nowrap', marginRight: 24 }}
+      >
         Football Predictor
       </Text>
 
@@ -55,9 +58,13 @@ export default function Navbar() {
               {user.username ?? user.email}
             </Text>
             {user.role === 'ADMIN' && (
-              <Tag color="orange" style={{ margin: 0 }}>Admin</Tag>
+              <Tag color="orange" style={{ margin: 0 }}>
+                Admin
+              </Tag>
             )}
-            <Button size="small" onClick={logout}>Sign out</Button>
+            <Button size="small" onClick={logout}>
+              Sign out
+            </Button>
           </>
         ) : (
           <>

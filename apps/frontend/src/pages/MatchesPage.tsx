@@ -1,9 +1,7 @@
-import { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Card, Tag, Tabs, Segmented, Table, Space, Typography, Spin, Alert,
-} from 'antd';
+import { Alert, Card, Segmented, Space, Spin, Table, Tabs, Tag, Typography } from 'antd';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { configApi, matchesApi, standingsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../types';
@@ -13,39 +11,43 @@ const { Text } = Typography;
 // ─── competition metadata ─────────────────────────────────────────────────────
 
 const COMPETITIONS = [
-  { code: 'WC',  label: 'FIFA World Cup',   badge: 'WC',     tagColor: 'green',  hasStages: false },
-  { code: 'CL',  label: 'Champions League', badge: 'UCL',    tagColor: 'blue',   hasStages: true  },
-  { code: 'PL',  label: 'Premier League',   badge: 'PL',     tagColor: 'purple', hasStages: false },
-  { code: 'PD',  label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange', hasStages: false },
-  { code: 'BL1', label: 'Bundesliga',       badge: 'BL',     tagColor: 'red',    hasStages: false },
-  { code: 'SA',  label: 'Serie A',          badge: 'SA',     tagColor: 'cyan',   hasStages: false },
+  { code: 'WC', label: 'FIFA World Cup', badge: 'WC', tagColor: 'green', hasStages: false },
+  { code: 'CL', label: 'Champions League', badge: 'UCL', tagColor: 'blue', hasStages: true },
+  { code: 'PL', label: 'Premier League', badge: 'PL', tagColor: 'purple', hasStages: false },
+  { code: 'PD', label: 'La Liga', badge: 'LaLiga', tagColor: 'orange', hasStages: false },
+  { code: 'BL1', label: 'Bundesliga', badge: 'BL', tagColor: 'red', hasStages: false },
+  { code: 'SA', label: 'Serie A', badge: 'SA', tagColor: 'cyan', hasStages: false },
 ] as const;
 
-type CompCode = typeof COMPETITIONS[number]['code'];
+type CompCode = (typeof COMPETITIONS)[number]['code'];
 
 export const COMP_META: Record<string, { label: string; badge: string; tagColor: string }> = {
-  WC:  { label: 'FIFA World Cup',   badge: 'WC',     tagColor: 'green'  },
-  CL:  { label: 'Champions League', badge: 'UCL',    tagColor: 'blue'   },
-  PL:  { label: 'Premier League',   badge: 'PL',     tagColor: 'purple' },
-  PD:  { label: 'La Liga',          badge: 'LaLiga', tagColor: 'orange' },
-  BL1: { label: 'Bundesliga',       badge: 'BL',     tagColor: 'red'    },
-  SA:  { label: 'Serie A',          badge: 'SA',     tagColor: 'cyan'   },
+  WC: { label: 'FIFA World Cup', badge: 'WC', tagColor: 'green' },
+  CL: { label: 'Champions League', badge: 'UCL', tagColor: 'blue' },
+  PL: { label: 'Premier League', badge: 'PL', tagColor: 'purple' },
+  PD: { label: 'La Liga', badge: 'LaLiga', tagColor: 'orange' },
+  BL1: { label: 'Bundesliga', badge: 'BL', tagColor: 'red' },
+  SA: { label: 'Serie A', badge: 'SA', tagColor: 'cyan' },
 };
 
 export function CompBadge({ code }: { code: string }) {
   const meta = COMP_META[code];
   if (!meta) return null;
-  return <Tag color={meta.tagColor} style={{ margin: 0 }}>{meta.badge}</Tag>;
+  return (
+    <Tag color={meta.tagColor} style={{ margin: 0 }}>
+      {meta.badge}
+    </Tag>
+  );
 }
 
 // ─── status badge ─────────────────────────────────────────────────────────────
 
 const STATUS_TAG_COLOR: Record<string, string> = {
-  FINISHED:  'default',
-  IN_PLAY:   'success',
-  PAUSED:    'warning',
+  FINISHED: 'default',
+  IN_PLAY: 'success',
+  PAUSED: 'warning',
   SCHEDULED: 'processing',
-  TIMED:     'processing',
+  TIMED: 'processing',
   POSTPONED: 'error',
   CANCELLED: 'error',
 };
@@ -61,13 +63,21 @@ function StatusBadge({ status }: { status: MatchStatus }) {
 // ─── stage metadata ───────────────────────────────────────────────────────────
 
 const STAGE_ORDER: Record<string, number> = {
-  FINAL: 0, SEMI_FINALS: 1, QUARTER_FINALS: 2,
-  LAST_16: 3, PLAYOFFS: 4, LEAGUE_STAGE: 5,
+  FINAL: 0,
+  SEMI_FINALS: 1,
+  QUARTER_FINALS: 2,
+  LAST_16: 3,
+  PLAYOFFS: 4,
+  LEAGUE_STAGE: 5,
 };
 
 const STAGE_LABEL: Record<string, string> = {
-  FINAL: 'Final', SEMI_FINALS: 'Semi Finals', QUARTER_FINALS: 'Quarter Finals',
-  LAST_16: 'Round of 16', PLAYOFFS: 'Play-offs', LEAGUE_STAGE: 'League Stage',
+  FINAL: 'Final',
+  SEMI_FINALS: 'Semi Finals',
+  QUARTER_FINALS: 'Quarter Finals',
+  LAST_16: 'Round of 16',
+  PLAYOFFS: 'Play-offs',
+  LEAGUE_STAGE: 'League Stage',
   REGULAR_SEASON: 'Regular Season',
 };
 
@@ -81,7 +91,7 @@ function sortedStages(stages: string[]) {
 
 function seasonLabel(season: string) {
   const year = parseInt(season, 10);
-  if (isNaN(year)) return season;
+  if (Number.isNaN(year)) return season;
   return `${year}/${String(year + 1).slice(-2)}`;
 }
 
@@ -139,7 +149,10 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
                 style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
               />
             )}
-            <Text strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Text
+              strong
+              style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
               {match.homeTeam.name}
             </Text>
           </Space>
@@ -151,7 +164,10 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
                 style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
               />
             )}
-            <Text strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <Text
+              strong
+              style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            >
               {match.awayTeam.name}
             </Text>
           </Space>
@@ -166,10 +182,16 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
           ) : (
             <div>
               <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>
-                {new Date(match.matchDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                {new Date(match.matchDate).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: 'short',
+                })}
               </Text>
               <Text type="secondary" style={{ fontSize: 13, display: 'block' }}>
-                {new Date(match.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(match.matchDate).toLocaleTimeString('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </Text>
             </div>
           )}
@@ -182,7 +204,9 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
           </div>
           {match.stage && match.stage !== 'REGULAR_SEASON' && (
             <div style={{ marginBottom: 4 }}>
-              <Text type="secondary" style={{ fontSize: 11 }}>{stageLabel(match.stage)}</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                {stageLabel(match.stage)}
+              </Text>
             </div>
           )}
           {myPrediction && (
@@ -205,7 +229,7 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
   const bySeason = new Map<string, Match[]>();
   for (const m of matches) {
     if (!bySeason.has(m.season)) bySeason.set(m.season, []);
-    bySeason.get(m.season)!.push(m);
+    bySeason.get(m.season)?.push(m);
   }
   const seasons = [...bySeason.keys()].sort((a, b) => b.localeCompare(a));
   const multiSeason = seasons.length > 1;
@@ -213,12 +237,13 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
   return (
     <div>
       {seasons.map((season) => {
+        // biome-ignore lint/style/noNonNullAssertion: season was inserted into the map just above
         const seasonMatches = bySeason.get(season)!;
         const byStage = new Map<string, Match[]>();
         for (const m of seasonMatches) {
           const key = m.stage ?? 'OTHER';
           if (!byStage.has(key)) byStage.set(key, []);
-          byStage.get(key)!.push(m);
+          byStage.get(key)?.push(m);
         }
         const stages = sortedStages([...byStage.keys()]);
 
@@ -252,10 +277,10 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
                       fontWeight: 400,
                     }}
                   >
-                    {byStage.get(stage)!.length} matches
+                    {byStage.get(stage)?.length} matches
                   </Text>
                 </Text>
-                {byStage.get(stage)!.map((m) => (
+                {byStage.get(stage)?.map((m) => (
                   <MatchRow key={m.id} match={m} userId={userId} />
                 ))}
               </div>
@@ -371,20 +396,26 @@ function StandingsTable({
               record.position <= advancementSpots
                 ? 'rgba(0, 100, 0, 0.12)'
                 : showRelegation && record.position > total - RELEGATION
-                ? 'rgba(120, 0, 0, 0.12)'
-                : undefined,
+                  ? 'rgba(120, 0, 0, 0.12)'
+                  : undefined,
           },
         })}
       />
-      <Space style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <Space
+        style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}
+      >
         <Space size={6}>
           <div style={{ width: 10, height: 10, borderRadius: 2, background: '#14532d' }} />
-          <Text type="secondary" style={{ fontSize: 12 }}>{advancementLabel}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {advancementLabel}
+          </Text>
         </Space>
         {showRelegation && (
           <Space size={6}>
             <div style={{ width: 10, height: 10, borderRadius: 2, background: '#7f1d1d' }} />
-            <Text type="secondary" style={{ fontSize: 12 }}>Relegation</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Relegation
+            </Text>
           </Space>
         )}
       </Space>
@@ -424,23 +455,26 @@ function WCGroupsView({ groups }: { groups: GroupStanding[] }) {
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 const STATUS_SEGMENTS = [
-  { label: 'All',       value: ''              },
+  { label: 'All', value: '' },
   { label: 'Scheduled', value: 'SCHEDULED,TIMED' },
-  { label: 'Live',      value: 'IN_PLAY,PAUSED'  },
-  { label: 'Finished',  value: 'FINISHED'        },
+  { label: 'Live', value: 'IN_PLAY,PAUSED' },
+  { label: 'Finished', value: 'FINISHED' },
 ];
 
 export default function MatchesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const competition = (
-    COMPETITIONS.find((c) => c.code === searchParams.get('comp'))?.code ?? 'CL'
-  ) as CompCode;
+  const competition = (COMPETITIONS.find((c) => c.code === searchParams.get('comp'))?.code ??
+    'CL') as CompCode;
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
-  const [stageFilter, setStageFilter]   = useState<string | undefined>();
+  const [stageFilter, setStageFilter] = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
   const { user } = useUser();
 
-  const { data: matches, isLoading, error } = useQuery({
+  const {
+    data: matches,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['matches', competition, statusFilter],
     queryFn: () => matchesApi.getAll(statusFilter, competition),
   });
@@ -451,9 +485,14 @@ export default function MatchesPage() {
     staleTime: Infinity,
   });
 
+  // biome-ignore lint/style/noNonNullAssertion: competition is always a valid code from COMPETITIONS
   const currentComp = COMPETITIONS.find((c) => c.code === competition)!;
 
-  const { data: standings, isLoading: standingsLoading, error: standingsError } = useQuery<Standing[] | GroupStanding[]>({
+  const {
+    data: standings,
+    isLoading: standingsLoading,
+    error: standingsError,
+  } = useQuery<Standing[] | GroupStanding[]>({
     queryKey: ['standings', competition],
     queryFn: () => standingsApi.get(competition),
     enabled: view === 'table' && !currentComp.hasStages,
@@ -479,12 +518,10 @@ export default function MatchesPage() {
       ? sortedStages([...new Set(matches.map((m) => m.stage ?? 'OTHER'))])
       : [];
 
-  const visibleMatches = stageFilter
-    ? matches?.filter((m) => m.stage === stageFilter)
-    : matches;
+  const visibleMatches = stageFilter ? matches?.filter((m) => m.stage === stageFilter) : matches;
 
   const emptyMessage = () => {
-    if (statusFilter === 'IN_PLAY,PAUSED')  return 'No matches live right now.';
+    if (statusFilter === 'IN_PLAY,PAUSED') return 'No matches live right now.';
     if (statusFilter === 'SCHEDULED,TIMED') return 'No upcoming matches scheduled.';
     if (stageFilter) return `No finished matches in the ${stageLabel(stageFilter)} stage.`;
     if (!config?.footballApiConfigured) {
@@ -502,7 +539,9 @@ export default function MatchesPage() {
     key: comp.code,
     label: (
       <Space size={6}>
-        <Tag color={comp.tagColor} style={{ margin: 0 }}>{comp.badge}</Tag>
+        <Tag color={comp.tagColor} style={{ margin: 0 }}>
+          {comp.badge}
+        </Tag>
         {comp.label}
       </Space>
     ),
@@ -519,7 +558,10 @@ export default function MatchesPage() {
           <Space wrap>
             {!currentComp.hasStages && (
               <Segmented
-                options={[{ label: 'Matches', value: 'matches' }, { label: 'Table', value: 'table' }]}
+                options={[
+                  { label: 'Matches', value: 'matches' },
+                  { label: 'Table', value: 'table' },
+                ]}
                 value={view}
                 onChange={(v) => setView(v as 'matches' | 'table')}
               />
@@ -539,21 +581,26 @@ export default function MatchesPage() {
       />
 
       {/* Stage filter chips */}
-      {view === 'matches' && isFinishedTab && currentComp.hasStages && availableStages.length > 1 && (
-        <Space wrap style={{ marginBottom: 16 }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>Stage:</Text>
-          {availableStages.map((stage) => (
-            <Tag
-              key={stage}
-              color={stageFilter === stage ? 'blue' : 'default'}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setStageFilter(stageFilter === stage ? undefined : stage)}
-            >
-              {stageLabel(stage)}
-            </Tag>
-          ))}
-        </Space>
-      )}
+      {view === 'matches' &&
+        isFinishedTab &&
+        currentComp.hasStages &&
+        availableStages.length > 1 && (
+          <Space wrap style={{ marginBottom: 16 }}>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              Stage:
+            </Text>
+            {availableStages.map((stage) => (
+              <Tag
+                key={stage}
+                color={stageFilter === stage ? 'blue' : 'default'}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setStageFilter(stageFilter === stage ? undefined : stage)}
+              >
+                {stageLabel(stage)}
+              </Tag>
+            ))}
+          </Space>
+        )}
 
       {/* Page title */}
       <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>
@@ -569,15 +616,15 @@ export default function MatchesPage() {
             </div>
           )}
           {standingsError && <Alert message="Failed to load standings." type="error" />}
-          {standings && standings.length > 0 && (
-            isGroupStandings(standings) ? (
+          {standings &&
+            standings.length > 0 &&
+            (isGroupStandings(standings) ? (
               <WCGroupsView groups={standings} />
             ) : (
               <Card>
                 <StandingsTable standings={standings as Standing[]} total={standings.length} />
               </Card>
-            )
-          )}
+            ))}
         </div>
       )}
 
@@ -602,13 +649,13 @@ export default function MatchesPage() {
               <Text type="secondary">{emptyMessage()}</Text>
             </div>
           )}
-          {visibleMatches && visibleMatches.length > 0 && (
-            isFinishedTab && !stageFilter && currentComp.hasStages ? (
+          {visibleMatches &&
+            visibleMatches.length > 0 &&
+            (isFinishedTab && !stageFilter && currentComp.hasStages ? (
               <GroupedMatchList matches={visibleMatches} userId={user?.id} />
             ) : (
               visibleMatches.map((m) => <MatchRow key={m.id} match={m} userId={user?.id} />)
-            )
-          )}
+            ))}
         </div>
       )}
     </div>

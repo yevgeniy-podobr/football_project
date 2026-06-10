@@ -1,16 +1,16 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ConfigProvider, Layout, theme } from 'antd';
-import { UserProvider, useUser } from './context/UserContext';
-import Navbar from './components/Navbar';
-import MatchesPage from './pages/MatchesPage';
-import MatchDetailPage from './pages/MatchDetailPage';
-import PredictionsPage from './pages/PredictionsPage';
-import AdminPage from './pages/AdminPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import type { ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import { UserProvider, useUser } from './context/UserContext';
+import AdminPage from './pages/AdminPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import LoginPage from './pages/LoginPage';
+import MatchDetailPage from './pages/MatchDetailPage';
+import MatchesPage from './pages/MatchesPage';
+import PredictionsPage from './pages/PredictionsPage';
+import RegisterPage from './pages/RegisterPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 const { Content } = Layout;
 

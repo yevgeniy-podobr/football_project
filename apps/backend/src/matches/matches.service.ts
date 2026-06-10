@@ -1,23 +1,23 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import axios from 'axios';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import axios from 'axios';
+import { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
-const CACHE_TTL_MS     = 5 * 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const COMPETITIONS = [
-  { code: 'CL',  name: 'UEFA Champions League' },
-  { code: 'PL',  name: 'Premier League' },
-  { code: 'PD',  name: 'La Liga' },
+  { code: 'CL', name: 'UEFA Champions League' },
+  { code: 'PL', name: 'Premier League' },
+  { code: 'PD', name: 'La Liga' },
   { code: 'BL1', name: 'Bundesliga' },
-  { code: 'SA',  name: 'Serie A' },
-  { code: 'WC',  name: 'FIFA World Cup' },
+  { code: 'SA', name: 'Serie A' },
+  { code: 'WC', name: 'FIFA World Cup' },
 ] as const;
 
-type CompCode = typeof COMPETITIONS[number]['code'];
+type CompCode = (typeof COMPETITIONS)[number]['code'];
 
 // football-data.org /competitions/:code/matches response shapes
 interface ApiTeam {
@@ -65,11 +65,7 @@ export class MatchesService {
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
-  private async syncCompetition(
-    apiKey: string,
-    code: CompCode,
-    now: Date,
-  ): Promise<number> {
+  private async syncCompetition(apiKey: string, code: CompCode, now: Date): Promise<number> {
     const { data } = await axios.get<ApiMatchesResponse>(
       `https://api.football-data.org/v4/competitions/${code}/matches`,
       { headers: { 'X-Auth-Token': apiKey }, params: { limit: 100 } },
@@ -80,7 +76,10 @@ export class MatchesService {
     );
 
     // Deduplicate teams
-    const teamMap = new Map<number, { externalId: number; name: string; shortName: string | null; crest: string | null }>();
+    const teamMap = new Map<
+      number,
+      { externalId: number; name: string; shortName: string | null; crest: string | null }
+    >();
     for (const m of rawMatches) {
       for (const side of [m.homeTeam, m.awayTeam]) {
         if (!teamMap.has(side.id)) {
@@ -99,7 +98,7 @@ export class MatchesService {
       const idMap = new Map<number, number>();
       for (const team of teamMap.values()) {
         const rec = await tx.team.upsert({
-          where:  { externalId: team.externalId },
+          where: { externalId: team.externalId },
           update: { name: team.name, shortName: team.shortName, crest: team.crest },
           create: team,
         });
@@ -108,42 +107,44 @@ export class MatchesService {
 
       // 2. Upsert matches
       for (const m of rawMatches) {
+        // biome-ignore lint/style/noNonNullAssertion: teams were upserted into idMap just above
         const homeTeamId = idMap.get(m.homeTeam.id)!;
+        // biome-ignore lint/style/noNonNullAssertion: teams were upserted into idMap just above
         const awayTeamId = idMap.get(m.awayTeam.id)!;
         // goals is stored as a Prisma Json field; cast is required because TypeScript
         // cannot automatically prove ApiGoal[] satisfies Prisma's InputJsonValue index type
         const goalsJson = (m.goals ?? []) as unknown as Prisma.InputJsonValue;
 
         await tx.match.upsert({
-          where:  { externalId: m.id },
+          where: { externalId: m.id },
           update: {
-            status:       m.status,
-            homeScore:    m.score?.fullTime?.home ?? null,
-            awayScore:    m.score?.fullTime?.away ?? null,
+            status: m.status,
+            homeScore: m.score?.fullTime?.home ?? null,
+            awayScore: m.score?.fullTime?.away ?? null,
             halfTimeHome: m.score?.halfTime?.home ?? null,
             halfTimeAway: m.score?.halfTime?.away ?? null,
-            winner:       m.score?.winner ?? null,
-            goals:        goalsJson,
-            cachedAt:     now,
+            winner: m.score?.winner ?? null,
+            goals: goalsJson,
+            cachedAt: now,
           },
           create: {
-            externalId:      m.id,
+            externalId: m.id,
             homeTeamId,
             awayTeamId,
-            matchDate:       new Date(m.utcDate),
-            status:          m.status,
-            stage:           m.stage ?? null,
-            group:           m.group ?? null,
-            homeScore:       m.score?.fullTime?.home ?? null,
-            awayScore:       m.score?.fullTime?.away ?? null,
-            halfTimeHome:    m.score?.halfTime?.home ?? null,
-            halfTimeAway:    m.score?.halfTime?.away ?? null,
-            winner:          m.score?.winner ?? null,
-            goals:           goalsJson,
-            competition:     data.competition?.name ?? code,
+            matchDate: new Date(m.utcDate),
+            status: m.status,
+            stage: m.stage ?? null,
+            group: m.group ?? null,
+            homeScore: m.score?.fullTime?.home ?? null,
+            awayScore: m.score?.fullTime?.away ?? null,
+            halfTimeHome: m.score?.halfTime?.home ?? null,
+            halfTimeAway: m.score?.halfTime?.away ?? null,
+            winner: m.score?.winner ?? null,
+            goals: goalsJson,
+            competition: data.competition?.name ?? code,
             competitionCode: code,
-            season:          String(m.season?.startDate?.split('-')[0] ?? '2024'),
-            cachedAt:        now,
+            season: String(m.season?.startDate?.split('-')[0] ?? '2024'),
+            cachedAt: now,
           },
         });
       }
@@ -172,7 +173,10 @@ export class MatchesService {
         const n = await this.syncCompetition(apiKey, comp.code, now);
         totalCount += n;
       } catch (err: unknown) {
-        console.error(`Sync failed for ${comp.code}:`, err instanceof Error ? err.message : String(err));
+        console.error(
+          `Sync failed for ${comp.code}:`,
+          err instanceof Error ? err.message : String(err),
+        );
       }
     }
 
@@ -187,13 +191,11 @@ export class MatchesService {
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
-    await this.fetchAndSync().catch((err) =>
-      console.error('Background sync failed:', err.message),
-    );
+    await this.fetchAndSync().catch((err) => console.error('Background sync failed:', err.message));
 
     const matches = await this.prisma.match.findMany({
       where: {
-        ...(statuses    ? { status: { in: statuses } } : {}),
+        ...(statuses ? { status: { in: statuses } } : {}),
         ...(competition ? { competitionCode: competition } : {}),
       },
       orderBy: { matchDate: 'desc' },

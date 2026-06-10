@@ -1,17 +1,17 @@
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
-import { PrismaModule } from './prisma/prisma.module';
+import { AuthModule } from './auth/auth.module';
 import { MatchesModule } from './matches/matches.module';
 import { PredictionsModule } from './predictions/predictions.module';
+import { PrismaModule } from './prisma/prisma.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { StandingsModule } from './standings/standings.module';
 import { StatsModule } from './stats/stats.module';
 import { UsersModule } from './users/users.module';
-import { StandingsModule } from './standings/standings.module';
-import { AuthModule } from './auth/auth.module';
-import { SchedulerModule } from './scheduler/scheduler.module';
-import { AdminModule } from './admin/admin.module';
 
 @Module({
   controllers: [AppController],

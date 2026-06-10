@@ -44,8 +44,25 @@ export class StatsService {
 
       return tx.predictionStats.upsert({
         where: { userId },
-        update: { total, correct, exactScores, homeWinCorrect, drawCorrect, awayWinCorrect, accuracy },
-        create: { userId, total, correct, exactScores, homeWinCorrect, drawCorrect, awayWinCorrect, accuracy },
+        update: {
+          total,
+          correct,
+          exactScores,
+          homeWinCorrect,
+          drawCorrect,
+          awayWinCorrect,
+          accuracy,
+        },
+        create: {
+          userId,
+          total,
+          correct,
+          exactScores,
+          homeWinCorrect,
+          drawCorrect,
+          awayWinCorrect,
+          accuracy,
+        },
       });
     });
   }

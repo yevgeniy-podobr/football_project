@@ -6,10 +6,7 @@ export class MatchesController {
   constructor(private readonly matchesService: MatchesService) {}
 
   @Get()
-  findAll(
-    @Query('status') status?: string,
-    @Query('competition') competition?: string,
-  ) {
+  findAll(@Query('status') status?: string, @Query('competition') competition?: string) { 
     return this.matchesService.findAll(status, competition);
   }
 

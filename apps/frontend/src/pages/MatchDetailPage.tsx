@@ -1,13 +1,11 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  Button, Card, Form, InputNumber, Space, Spin, Tag, Typography, Alert,
-} from 'antd';
 import { LeftOutlined } from '@ant-design/icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, Card, Form, InputNumber, Space, Spin, Tag, Typography } from 'antd';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
-import { CompBadge } from './MatchesPage';
 import type { Goal } from '../types';
+import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
 
@@ -23,13 +21,16 @@ function displayOutcome(home: number, away: number): DisplayOutcome {
 
 function seasonLabel(season: string) {
   const year = parseInt(season, 10);
-  if (isNaN(year)) return season;
+  if (Number.isNaN(year)) return season;
   return `${year}/${String(year + 1).slice(-2)}`;
 }
 
 function fullDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
@@ -42,7 +43,9 @@ function kickoffTime(dateStr: string) {
 function GoalsSection({ goals, homeTeamId }: { goals: Goal[]; homeTeamId: number }) {
   if (!goals.length) return null;
 
-  const sorted    = [...goals].sort((a, b) => a.minute - b.minute || (a.injuryTime ?? 0) - (b.injuryTime ?? 0));
+  const sorted = [...goals].sort(
+    (a, b) => a.minute - b.minute || (a.injuryTime ?? 0) - (b.injuryTime ?? 0),
+  );
   const homeGoals = sorted.filter((g) => g.team.id === homeTeamId);
   const awayGoals = sorted.filter((g) => g.team.id !== homeTeamId);
 
@@ -51,8 +54,18 @@ function GoalsSection({ goals, homeTeamId }: { goals: Goal[]; homeTeamId: number
   }
 
   function goalTag(type: Goal['type']) {
-    if (type === 'OWN_GOAL') return <Tag color="error" style={{ fontSize: 11, margin: '0 0 0 4px' }}>OG</Tag>;
-    if (type === 'PENALTY')  return <Tag color="warning" style={{ fontSize: 11, margin: '0 0 0 4px' }}>P</Tag>;
+    if (type === 'OWN_GOAL')
+      return (
+        <Tag color="error" style={{ fontSize: 11, margin: '0 0 0 4px' }}>
+          OG
+        </Tag>
+      );
+    if (type === 'PENALTY')
+      return (
+        <Tag color="warning" style={{ fontSize: 11, margin: '0 0 0 4px' }}>
+          P
+        </Tag>
+      );
     return null;
   }
 
@@ -60,34 +73,65 @@ function GoalsSection({ goals, homeTeamId }: { goals: Goal[]; homeTeamId: number
     <Card style={{ marginBottom: 24 }}>
       <Text
         type="secondary"
-        style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 16 }}
+        style={{
+          fontSize: 11,
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          display: 'block',
+          marginBottom: 16,
+        }}
       >
         Goals
       </Text>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
-          {homeGoals.map((g, i) => (
-            <Space key={i} style={{ display: 'flex', marginBottom: 8 }}>
-              <Text type="secondary" style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40 }}>
+          {homeGoals.map((g) => (
+            <Space
+              key={`${g.minute}-${g.scorer.name}`}
+              style={{ display: 'flex', marginBottom: 8 }}
+            >
+              <Text
+                type="secondary"
+                style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40 }}
+              >
                 {goalMin(g)}
               </Text>
               <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
               {goalTag(g.type)}
             </Space>
           ))}
-          {homeGoals.length === 0 && <Text type="secondary" style={{ fontSize: 13 }}>—</Text>}
+          {homeGoals.length === 0 && (
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              —
+            </Text>
+          )}
         </div>
         <div style={{ textAlign: 'right' }}>
-          {awayGoals.map((g, i) => (
-            <Space key={i} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          {awayGoals.map((g) => (
+            <Space
+              key={`${g.minute}-${g.scorer.name}`}
+              style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}
+            >
               {goalTag(g.type)}
               <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
-              <Text type="secondary" style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40, textAlign: 'left' }}>
+              <Text
+                type="secondary"
+                style={{
+                  fontSize: 13,
+                  fontVariantNumeric: 'tabular-nums',
+                  minWidth: 40,
+                  textAlign: 'left',
+                }}
+              >
                 {goalMin(g)}
               </Text>
             </Space>
           ))}
-          {awayGoals.length === 0 && <Text type="secondary" style={{ fontSize: 13 }}>—</Text>}
+          {awayGoals.length === 0 && (
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              —
+            </Text>
+          )}
         </div>
       </div>
     </Card>
@@ -105,6 +149,7 @@ export default function MatchDetailPage() {
   const { user } = useUser();
   const [form] = Form.useForm();
 
+  // biome-ignore lint/style/noNonNullAssertion: route always provides :id param
   const matchId = parseInt(id!, 10);
 
   const { data: match, isLoading } = useQuery({
@@ -124,8 +169,13 @@ export default function MatchDetailPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ pid, data }: { pid: number; data: { predictedHome: number; predictedAway: number } }) =>
-      predictionsApi.update(pid, data),
+    mutationFn: ({
+      pid,
+      data,
+    }: {
+      pid: number;
+      data: { predictedHome: number; predictedAway: number };
+    }) => predictionsApi.update(pid, data),
     onSuccess: invalidate,
   });
 
@@ -151,13 +201,16 @@ export default function MatchDetailPage() {
 
   const prediction = user ? match.predictions.find((p) => p.userId === user.id) : null;
   const isFinished = match.status === 'FINISHED';
-  const showScore  = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
+  const showScore = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
   const isCorrect =
     prediction?.outcome != null
       ? displayOutcome(prediction.predictedHome, prediction.predictedAway) ===
-        (prediction.outcome === 'HOME_WIN' ? 'Home Win'
-          : prediction.outcome === 'DRAW' ? 'Draw' : 'Away Win')
+        (prediction.outcome === 'HOME_WIN'
+          ? 'Home Win'
+          : prediction.outcome === 'DRAW'
+            ? 'Draw'
+            : 'Away Win')
       : null;
 
   const handleFinish = (values: { home: number; away: number }) => {
@@ -174,17 +227,16 @@ export default function MatchDetailPage() {
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
-  const goals     = (match.goals ?? []) as Goal[];
+  const goals = (match.goals ?? []) as Goal[];
 
   const predictionBgColor =
     isCorrect === null
       ? 'rgba(37, 99, 235, 0.1)'
       : isCorrect
-      ? 'rgba(22, 163, 74, 0.1)'
-      : 'rgba(220, 38, 38, 0.1)';
+        ? 'rgba(22, 163, 74, 0.1)'
+        : 'rgba(220, 38, 38, 0.1)';
 
-  const predictionBorderColor =
-    isCorrect === null ? '#1d4ed8' : isCorrect ? '#16a34a' : '#dc2626';
+  const predictionBorderColor = isCorrect === null ? '#1d4ed8' : isCorrect ? '#16a34a' : '#dc2626';
 
   return (
     <div style={{ maxWidth: 672, margin: '0 auto' }}>
@@ -216,20 +268,35 @@ export default function MatchDetailPage() {
         </div>
 
         {/* Teams + score */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+          }}
+        >
           <div style={{ textAlign: 'center', flex: 1 }}>
             {match.homeTeam.crest && (
               <img
                 src={match.homeTeam.crest}
                 alt=""
-                style={{ width: 64, height: 64, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+                style={{
+                  width: 64,
+                  height: 64,
+                  objectFit: 'contain',
+                  display: 'block',
+                  margin: '0 auto 12px',
+                }}
               />
             )}
             <Text strong style={{ fontSize: 17, display: 'block', lineHeight: 1.3 }}>
               {match.homeTeam.name}
             </Text>
             {match.homeTeam.shortName && (
-              <Text type="secondary" style={{ fontSize: 12 }}>{match.homeTeam.shortName}</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {match.homeTeam.shortName}
+              </Text>
             )}
           </div>
 
@@ -246,7 +313,9 @@ export default function MatchDetailPage() {
                 )}
               </>
             ) : (
-              <Text style={{ fontSize: 32, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>VS</Text>
+              <Text style={{ fontSize: 32, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+                VS
+              </Text>
             )}
           </div>
 
@@ -255,14 +324,22 @@ export default function MatchDetailPage() {
               <img
                 src={match.awayTeam.crest}
                 alt=""
-                style={{ width: 64, height: 64, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
+                style={{
+                  width: 64,
+                  height: 64,
+                  objectFit: 'contain',
+                  display: 'block',
+                  margin: '0 auto 12px',
+                }}
               />
             )}
             <Text strong style={{ fontSize: 17, display: 'block', lineHeight: 1.3 }}>
               {match.awayTeam.name}
             </Text>
             {match.awayTeam.shortName && (
-              <Text type="secondary" style={{ fontSize: 12 }}>{match.awayTeam.shortName}</Text>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {match.awayTeam.shortName}
+              </Text>
             )}
           </div>
         </div>
@@ -275,11 +352,11 @@ export default function MatchDetailPage() {
 
       {/* Prediction card */}
       <Card>
-        <Title level={5} style={{ marginTop: 0 }}>Your Prediction</Title>
+        <Title level={5} style={{ marginTop: 0 }}>
+          Your Prediction
+        </Title>
 
-        {!user && (
-          <Text type="secondary">Sign in via the navbar to make a prediction.</Text>
-        )}
+        {!user && <Text type="secondary">Sign in via the navbar to make a prediction.</Text>}
 
         {user && prediction && (
           <div style={{ marginBottom: 20 }}>
@@ -292,7 +369,14 @@ export default function MatchDetailPage() {
                 textAlign: 'center',
               }}
             >
-              <Text style={{ fontSize: 32, fontWeight: 900, fontVariantNumeric: 'tabular-nums', display: 'block' }}>
+              <Text
+                style={{
+                  fontSize: 32,
+                  fontWeight: 900,
+                  fontVariantNumeric: 'tabular-nums',
+                  display: 'block',
+                }}
+              >
                 {prediction.predictedHome} – {prediction.predictedAway}
               </Text>
               <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
@@ -310,8 +394,8 @@ export default function MatchDetailPage() {
                   {prediction.isExactScore
                     ? '★ Exact score!'
                     : isCorrect
-                    ? '✓ Correct outcome'
-                    : '✗ Incorrect'}
+                      ? '✓ Correct outcome'
+                      : '✗ Incorrect'}
                 </Text>
               )}
               {isCorrect === null && (
@@ -365,7 +449,9 @@ export default function MatchDetailPage() {
               </Form.Item>
 
               <div style={{ paddingBottom: 8 }}>
-                <Text style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>–</Text>
+                <Text style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+                  –
+                </Text>
               </div>
 
               <Form.Item

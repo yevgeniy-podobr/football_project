@@ -1,6 +1,6 @@
+import { Alert, Button, Form, Input, Result, Typography } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Form, Input, Button, Typography, Alert, Result } from 'antd';
 import { authApi } from '../api/client';
 
 export default function ForgotPasswordPage() {

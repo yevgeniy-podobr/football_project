@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import axios from 'axios';
 import { Prisma } from '@prisma/client';
+import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 
 const ALLOWED = new Set(['PL', 'PD', 'BL1', 'SA', 'WC']);
@@ -60,9 +60,7 @@ export class StandingsService {
 
   async getStandings(competitionCode: string) {
     if (!ALLOWED.has(competitionCode)) {
-      throw new BadRequestException(
-        `Standings not available for ${competitionCode}`,
-      );
+      throw new BadRequestException(`Standings not available for ${competitionCode}`);
     }
 
     const cached = await this.prisma.standingsCache.findUnique({
@@ -79,6 +77,7 @@ export class StandingsService {
       // WC stores [{group, table}] — reject old flat [{position,...}] cache entries
       (competitionCode !== 'WC' || ('group' in cachedData[0] && 'table' in cachedData[0]));
     if (cacheValid) {
+      // biome-ignore lint/style/noNonNullAssertion: Array.isArray + length>0 check above guarantees non-null
       return cachedData!;
     }
 
@@ -90,9 +89,7 @@ export class StandingsService {
       { headers: { 'X-Auth-Token': apiKey } },
     );
 
-    const allGroups = (data.standings ?? []).filter(
-      (s) => s.type === 'TOTAL',
-    );
+    const allGroups = (data.standings ?? []).filter((s) => s.type === 'TOTAL');
 
     const mapEntry = (entry: ApiStandingEntry): StandingRow => ({
       position: entry.position,
@@ -121,6 +118,7 @@ export class StandingsService {
       allGroups.length > 1
         ? [...allGroups]
             .sort((a, b) => (a.group ?? '').localeCompare(b.group ?? ''))
+            // biome-ignore lint/style/noNonNullAssertion: filtered to TOTAL type groups which always have group set
             .map((g) => ({ group: g.group!, table: g.table.map(mapEntry) }))
         : (allGroups[0]?.table ?? []).map(mapEntry);
 

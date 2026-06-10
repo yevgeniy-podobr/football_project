@@ -1,3 +1,4 @@
+import * as crypto from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -6,12 +7,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcryptjs';
-import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer';
 import { Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
+import * as nodemailer from 'nodemailer';
 import { UsersService } from '../users/users.service';
-import type { JwtPayload } from './jwt.strategy';
+import { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
@@ -65,11 +65,11 @@ export class AuthService {
       return;
     }
 
-    const token  = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString('hex');
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
     await this.usersService.setResetToken(user.id, token, expiry);
 
-    const appUrl   = this.config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173';
+    const appUrl = this.config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173';
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
     await this.mailer.sendMail({
@@ -92,7 +92,12 @@ export class AuthService {
   }
 
   private sign(user: { id: number; email: string; username: string | null; role: Role }) {
-    const payload: JwtPayload = { sub: user.id, email: user.email, username: user.username, role: user.role };
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+    };
     return this.jwtService.sign(payload);
   }
 }

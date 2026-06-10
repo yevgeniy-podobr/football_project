@@ -1,5 +1,16 @@
 import axios from 'axios';
-import type { AdminStats, AdminUserDetail, AdminUserRow, GlobalStats, GroupStanding, Match, Prediction, PredictionStats, Standing, User } from '../types';
+import type {
+  AdminStats,
+  AdminUserDetail,
+  AdminUserRow,
+  GlobalStats,
+  GroupStanding,
+  Match,
+  Prediction,
+  PredictionStats,
+  Standing,
+  User,
+} from '../types';
 
 const TOKEN_KEY = 'cl-predictor-token';
 
@@ -36,7 +47,9 @@ export const authApi = {
   forgotPassword: (email: string) =>
     api.post<{ message: string }>('/auth/forgot-password', { email }).then((r) => r.data),
   resetPassword: (token: string, newPassword: string) =>
-    api.post<{ message: string }>('/auth/reset-password', { token, newPassword }).then((r) => r.data),
+    api
+      .post<{ message: string }>('/auth/reset-password', { token, newPassword })
+      .then((r) => r.data),
 };
 
 export const configApi = {
@@ -50,14 +63,17 @@ export const usersApi = {
 
 export const matchesApi = {
   getAll: (status?: string, competition?: string) =>
-    api.get<Match[]>('/matches', {
-      params: {
-        ...(status ? { status } : {}),
-        ...(competition ? { competition } : {}),
-      },
-    }).then((r) => r.data),
+    api
+      .get<Match[]>('/matches', {
+        params: {
+          ...(status ? { status } : {}),
+          ...(competition ? { competition } : {}),
+        },
+      })
+      .then((r) => r.data),
   getOne: (id: number) => api.get<Match>(`/matches/${id}`).then((r) => r.data),
-  sync: (force = false) => api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
+  sync: (force = false) =>
+    api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
   upcoming: () => api.get<Match[]>('/matches/upcoming').then((r) => r.data),
   recent: () => api.get<Match[]>('/matches/recent').then((r) => r.data),
   h2h: (homeId: number, awayId: number) =>

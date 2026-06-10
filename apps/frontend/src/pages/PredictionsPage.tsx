@@ -1,11 +1,21 @@
-import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, Card, Col, Row, Space, Statistic, Tag, Typography } from 'antd';
+import { Link } from 'react-router-dom';
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend,
-  Line, LineChart, Pie, PieChart,
-  ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
-import { Card, Col, Row, Statistic, Button, Tag, Typography, Space } from 'antd';
 import { predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import type { Outcome, Prediction } from '../types';
@@ -66,25 +76,25 @@ export default function PredictionsPage() {
   });
 
   const resolved = predictions.filter((p) => p.outcome !== null);
-  const pending  = predictions.filter((p) => p.outcome === null);
+  const pending = predictions.filter((p) => p.outcome === null);
 
-  const correctCount   = resolved.filter(isCorrect).length;
+  const correctCount = resolved.filter(isCorrect).length;
   const incorrectCount = resolved.length - correctCount;
-  const exactCount     = resolved.filter((p) => p.isExactScore).length;
+  const exactCount = resolved.filter((p) => p.isExactScore).length;
   const accuracy =
     resolved.length > 0 ? Math.round((correctCount / resolved.length) * 1000) / 10 : 0;
 
   // Pie: correct / incorrect / pending
   const pieData = [
-    { name: 'Correct',   value: correctCount },
+    { name: 'Correct', value: correctCount },
     { name: 'Incorrect', value: incorrectCount },
-    { name: 'Pending',   value: pending.length },
+    { name: 'Pending', value: pending.length },
   ].filter((d) => d.value > 0);
 
   // Bar: by predicted outcome type
   const byPredicted: Record<Outcome, { total: number; correct: number }> = {
     HOME_WIN: { total: 0, correct: 0 },
-    DRAW:     { total: 0, correct: 0 },
+    DRAW: { total: 0, correct: 0 },
     AWAY_WIN: { total: 0, correct: 0 },
   };
   for (const p of resolved) {
@@ -107,9 +117,9 @@ export default function PredictionsPage() {
 
   const kpis = [
     { label: 'Predictions', value: predictions.length, color: undefined },
-    { label: 'Correct',     value: correctCount,        color: '#4ade80' },
-    { label: 'Exact scores', value: exactCount,         color: '#facc15' },
-    { label: 'Accuracy',    value: `${accuracy}%`,      color: '#60a5fa' },
+    { label: 'Correct', value: correctCount, color: '#4ade80' },
+    { label: 'Exact scores', value: exactCount, color: '#facc15' },
+    { label: 'Accuracy', value: `${accuracy}%`, color: '#60a5fa' },
   ];
 
   const predBorderColor = (p: Prediction) => {
@@ -120,7 +130,7 @@ export default function PredictionsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <Title level={3} style={{ margin: 0 }}>
-        {(user?.username ?? user?.email) + "'s Predictions"}
+        {`${user?.username ?? user?.email}'s Predictions`}
       </Title>
 
       {/* KPI strip */}
@@ -149,12 +159,16 @@ export default function PredictionsPage() {
                 <PieChart>
                   <Pie
                     data={pieData}
-                    cx="50%" cy="50%"
-                    innerRadius={55} outerRadius={90}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={90}
                     dataKey="value"
                     paddingAngle={3}
                   >
-                    {pieData.map((_e, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                    {pieData.map((_e, i) => (
+                      <Cell key={_e.name} fill={PIE_COLORS[i]} />
+                    ))}
                   </Pie>
                   <Tooltip contentStyle={CHART_STYLE} />
                   <Legend />
@@ -172,7 +186,7 @@ export default function PredictionsPage() {
                   <YAxis allowDecimals={false} tick={AXIS_TICK} />
                   <Tooltip contentStyle={CHART_STYLE} />
                   <Legend />
-                  <Bar dataKey="Total"   fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -214,7 +228,9 @@ export default function PredictionsPage() {
 
       {/* Prediction list */}
       <div>
-        <Title level={5} style={{ marginBottom: 16 }}>All predictions</Title>
+        <Title level={5} style={{ marginBottom: 16 }}>
+          All predictions
+        </Title>
 
         {predictions.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -254,24 +270,40 @@ export default function PredictionsPage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <Link
                       to={`/matches/${p.matchId}`}
-                      style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      style={{
+                        display: 'block',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
                     >
                       {p.match?.homeTeam.name} vs {p.match?.awayTeam.name}
                     </Link>
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       {p.match?.status} ·{' '}
                       {new Date(p.match?.matchDate ?? '').toLocaleDateString('en-GB', {
-                        day: '2-digit', month: 'short', year: 'numeric',
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
                       })}
                     </Text>
                   </div>
 
                   {/* Predicted score */}
                   <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <Text style={{ fontSize: 18, fontWeight: 700, fontVariantNumeric: 'tabular-nums', display: 'block' }}>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 700,
+                        fontVariantNumeric: 'tabular-nums',
+                        display: 'block',
+                      }}
+                    >
                       {p.predictedHome} – {p.predictedAway}
                     </Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{OUTCOME_LABEL[po]}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {OUTCOME_LABEL[po]}
+                    </Text>
                   </div>
 
                   {/* Actual result */}
@@ -298,7 +330,9 @@ export default function PredictionsPage() {
                           {p.isExactScore ? '★ Exact' : correct ? '✓ Correct' : '✗ Wrong'}
                         </Text>
                       ) : (
-                        <Text type="secondary" style={{ fontSize: 12 }}>Pending</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Pending
+                        </Text>
                       )}
                     </div>
                   )}

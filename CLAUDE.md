@@ -8,6 +8,7 @@ A fullstack football app with match data, standings, and predictions tracking wi
 - **Backend:** NestJS + TypeScript
 - **Database:** PostgreSQL + Prisma
 - **Monorepo:** pnpm workspaces
+- **Linter/Formatter:** Biome (`biome.json` at root — 2-space indent, single quotes, trailing commas, import sorting)
 - **External API:** football-data.org (free tier, 10 req/min)
 
 ## Ports
@@ -164,6 +165,9 @@ pnpm dev:frontend # frontend only (port 5173)
 pnpm db:push      # apply Prisma schema changes
 pnpm db:migrate   # run Prisma migrations
 pnpm db:studio    # open Prisma Studio
+pnpm lint         # biome lint ./apps
+pnpm format       # biome format --write ./apps
+pnpm check        # biome check --write ./apps (lint + format + import sort)
 ```
 
 ## Environment Variables (apps/backend/.env)

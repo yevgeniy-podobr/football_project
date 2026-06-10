@@ -1,7 +1,12 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { Role } from '@prisma/client';
-import type { JwtPayload } from './jwt.strategy';
+import { Role } from '@prisma/client';
+import { JwtPayload } from './jwt.strategy';
 import { ROLES_KEY } from './roles.decorator';
 
 @Injectable()

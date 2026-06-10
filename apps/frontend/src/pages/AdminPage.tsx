@@ -1,9 +1,19 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Alert, Button, Card, Col, Row, Statistic, Table, Tag, Typography, Space, Spin,
+  Alert,
+  Button,
+  Card,
+  Col,
+  Row,
+  Space,
+  Spin,
+  Statistic,
+  Table,
+  Tag,
+  Typography,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { useState } from 'react';
 import { adminApi, matchesApi, predictionsApi } from '../api/client';
 import type { AdminUserDetail, AdminUserRow, Outcome } from '../types';
 import { CompBadge } from './MatchesPage';
@@ -19,7 +29,11 @@ function predictedOutcome(home: number, away: number): Outcome {
 }
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 // ─── small shared components ──────────────────────────────────────────────────
@@ -55,14 +69,18 @@ function UserDetailPanel({ userId }: { userId: number }) {
     );
   }
   if (isError || !data) {
-    return <Text type="danger" style={{ display: 'block', padding: '16px 0' }}>Failed to load user.</Text>;
+    return (
+      <Text type="danger" style={{ display: 'block', padding: '16px 0' }}>
+        Failed to load user.
+      </Text>
+    );
   }
 
   const statItems = data.stats
     ? [
-        { label: 'Total',    value: data.stats.total,       color: undefined },
-        { label: 'Correct',  value: data.stats.correct,     color: '#4ade80' },
-        { label: 'Exact',    value: data.stats.exactScores,  color: '#facc15' },
+        { label: 'Total', value: data.stats.total, color: undefined },
+        { label: 'Correct', value: data.stats.correct, color: '#4ade80' },
+        { label: 'Exact', value: data.stats.exactScores, color: '#facc15' },
         { label: 'Accuracy', value: `${data.stats.accuracy}%`, color: '#60a5fa' },
       ]
     : [];
@@ -74,7 +92,9 @@ function UserDetailPanel({ userId }: { userId: number }) {
         <Text strong>{data.username ?? '—'}</Text>
         <Text type="secondary">{data.email}</Text>
         <RoleBadge role={data.role} />
-        <Text type="secondary" style={{ fontSize: 12 }}>Registered {fmtDate(data.createdAt)}</Text>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          Registered {fmtDate(data.createdAt)}
+        </Text>
       </Space>
 
       {/* Stats KPIs */}
@@ -93,7 +113,9 @@ function UserDetailPanel({ userId }: { userId: number }) {
           ))}
         </Row>
       ) : (
-        <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>No prediction stats yet.</Text>
+        <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+          No prediction stats yet.
+        </Text>
       )}
 
       {/* Predictions list */}
@@ -117,7 +139,15 @@ function UserDetailPanel({ userId }: { userId: number }) {
                 }}
               >
                 <CompBadge code={p.match.competitionCode} />
-                <Text style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Text
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {p.match.homeTeam.shortName ?? p.match.homeTeam.name}
                   <Text type="secondary"> vs </Text>
                   {p.match.awayTeam.shortName ?? p.match.awayTeam.name}
@@ -125,12 +155,23 @@ function UserDetailPanel({ userId }: { userId: number }) {
                 <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
                   {fmtDate(p.match.matchDate)}
                 </Text>
-                <Text style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#93c5fd', flexShrink: 0 }}>
+                <Text
+                  style={{
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
+                    color: '#93c5fd',
+                    flexShrink: 0,
+                  }}
+                >
                   {p.predictedHome}–{p.predictedAway}
                 </Text>
                 {matchFinished && (
-                  <Text style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                    <Text type="secondary" style={{ fontSize: 11, marginRight: 4 }}>actual</Text>
+                  <Text
+                    style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}
+                  >
+                    <Text type="secondary" style={{ fontSize: 11, marginRight: 4 }}>
+                      actual
+                    </Text>
                     {p.match.homeScore}–{p.match.awayScore}
                   </Text>
                 )}
@@ -160,7 +201,13 @@ function UsersTable({
       title: 'User',
       key: 'user',
       render: (_, u) => (
-        <Text strong>{u.username ?? <Text type="secondary" style={{ fontStyle: 'italic' }}>no username</Text>}</Text>
+        <Text strong>
+          {u.username ?? (
+            <Text type="secondary" style={{ fontStyle: 'italic' }}>
+              no username
+            </Text>
+          )}
+        </Text>
       ),
     },
     {
@@ -261,20 +308,33 @@ export default function AdminPage() {
 
   const lastSync = stats?.lastSyncAt
     ? new Date(stats.lastSyncAt).toLocaleString('en-GB', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       })
     : 'Never';
 
   return (
-    <div style={{ maxWidth: 896, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}>
-      <Title level={3} style={{ margin: 0 }}>Admin Panel</Title>
+    <div
+      style={{ maxWidth: 896, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}
+    >
+      <Title level={3} style={{ margin: 0 }}>
+        Admin Panel
+      </Title>
 
       {/* Database Overview */}
       <section>
         <Text
           type="secondary"
-          style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 16 }}
+          style={{
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            display: 'block',
+            marginBottom: 16,
+          }}
         >
           Database Overview
         </Text>
@@ -283,10 +343,10 @@ export default function AdminPage() {
         ) : (
           <Row gutter={[16, 16]}>
             {[
-              { label: 'Users',       value: stats?.users ?? 0       },
+              { label: 'Users', value: stats?.users ?? 0 },
               { label: 'Predictions', value: stats?.predictions ?? 0 },
-              { label: 'Matches',     value: stats?.matches ?? 0     },
-              { label: 'Last Sync',   value: lastSync                 },
+              { label: 'Matches', value: stats?.matches ?? 0 },
+              { label: 'Last Sync', value: lastSync },
             ].map((s) => (
               <Col xs={12} sm={6} key={s.label}>
                 <Card>
@@ -302,7 +362,13 @@ export default function AdminPage() {
       <section>
         <Text
           type="secondary"
-          style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 16 }}
+          style={{
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            display: 'block',
+            marginBottom: 16,
+          }}
         >
           Actions
         </Text>
@@ -310,12 +376,22 @@ export default function AdminPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Resolve All */}
           <Card>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
               <div>
-                <Text strong style={{ display: 'block', marginBottom: 4 }}>Resolve All Predictions</Text>
+                <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                  Resolve All Predictions
+                </Text>
                 <Text type="secondary" style={{ fontSize: 13 }}>
-                  Score all pending predictions for finished matches and update user stats.
-                  The cron job does this automatically every 5 minutes.
+                  Score all pending predictions for finished matches and update user stats. The cron
+                  job does this automatically every 5 minutes.
                 </Text>
               </div>
               <Button
@@ -339,18 +415,32 @@ export default function AdminPage() {
               />
             )}
             {resolveMutation.isError && (
-              <Alert style={{ marginTop: 16 }} type="error" message="Failed to resolve predictions." />
+              <Alert
+                style={{ marginTop: 16 }}
+                type="error"
+                message="Failed to resolve predictions."
+              />
             )}
           </Card>
 
           {/* Force Sync */}
           <Card>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
               <div>
-                <Text strong style={{ display: 'block', marginBottom: 4 }}>Force Sync Matches</Text>
+                <Text strong style={{ display: 'block', marginBottom: 4 }}>
+                  Force Sync Matches
+                </Text>
                 <Text type="secondary" style={{ fontSize: 13 }}>
-                  Immediately fetch the latest match data from football-data.org, bypassing
-                  the 5-minute cache. Use sparingly — the API is rate-limited to 10 req/min.
+                  Immediately fetch the latest match data from football-data.org, bypassing the
+                  5-minute cache. Use sparingly — the API is rate-limited to 10 req/min.
                 </Text>
               </div>
               <Button
@@ -383,7 +473,13 @@ export default function AdminPage() {
       <section>
         <Text
           type="secondary"
-          style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 16 }}
+          style={{
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            display: 'block',
+            marginBottom: 16,
+          }}
         >
           Users
         </Text>
@@ -392,11 +488,7 @@ export default function AdminPage() {
         ) : !users?.length ? (
           <Text type="secondary">No users found.</Text>
         ) : (
-          <UsersTable
-            users={users}
-            selectedId={selectedUserId}
-            onSelect={handleUserSelect}
-          />
+          <UsersTable users={users} selectedId={selectedUserId} onSelect={handleUserSelect} />
         )}
       </section>
     </div>

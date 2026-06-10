@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import type { User } from '../types';
 
 interface UserContextValue {
@@ -15,7 +15,7 @@ const UserContext = createContext<UserContextValue>({
   logout: () => {},
 });
 
-const USER_KEY  = 'cl-predictor-user';
+const USER_KEY = 'cl-predictor-user';
 const TOKEN_KEY = 'cl-predictor-token';
 
 export function UserProvider({ children }: { children: ReactNode }) {
@@ -28,9 +28,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem(TOKEN_KEY),
-  );
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
 
   const login = (u: User, t: string) => {
     localStorage.setItem(USER_KEY, JSON.stringify(u));
@@ -47,9 +45,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={{ user, token, login, logout }}>{children}</UserContext.Provider>
   );
 }
 
