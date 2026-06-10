@@ -21,9 +21,15 @@
     "db:studio": "pnpm --filter backend db:studio",
     "lint": "biome lint ./apps",
     "format": "biome format --write ./apps",
-    "check": "biome check --write ./apps"
+    "check": "biome check --write ./apps",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "biome check --write"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16"
+    "@biomejs/biome": "^2.4.16",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7"
   }
 }
