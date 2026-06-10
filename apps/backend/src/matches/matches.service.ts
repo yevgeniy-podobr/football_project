@@ -8,7 +8,7 @@ import type { PrismaService } from '../prisma/prisma.service';
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const COMPETITIONS = [
+const COMPETITION = [
   { code: 'CL', name: 'UEFA Champions League' },
   { code: 'PL', name: 'Premier League' },
   { code: 'PD', name: 'La Liga' },
