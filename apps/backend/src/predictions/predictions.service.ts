@@ -7,8 +7,8 @@ import {
 import { Outcome } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StatsService } from '../stats/stats.service';
-import type { CreatePredictionDto } from './dto/create-prediction.dto';
-import type { UpdatePredictionDto } from './dto/update-prediction.dto';
+import { CreatePredictionDto } from './dto/create-prediction.dto';
+import { UpdatePredictionDto } from './dto/update-prediction.dto';
 
 @Injectable()
 export class PredictionsService {
