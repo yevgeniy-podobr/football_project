@@ -7,6 +7,7 @@ A fullstack football app with match data, standings, and predictions tracking wi
 - **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons
 - **Backend:** NestJS + TypeScript
 - **Database:** PostgreSQL + Prisma
+- **Cache:** Redis (ioredis + cache-manager-ioredis-yet via @nestjs/cache-manager)
 - **Monorepo:** pnpm workspaces
 - **Linter/Formatter:** Biome (`biome.json` at root — 2-space indent, single quotes, trailing commas, import sorting)
 - **External API:** football-data.org (free tier, 10 req/min)
@@ -58,8 +59,8 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - POST /predictions/resolve-all — scores all unresolved predictions for finished matches
 - Matches sync from football-data.org (auto on request if stale >5 min, or forced)
 - GET /matches/upcoming, /matches/recent, /matches/h2h endpoints
-- In-memory cache (5-min TTL) on match queries via @nestjs/cache-manager
-- Standings cached in DB (24-hour TTL via StandingsCache table)
+- Redis cache (5-min TTL) on match queries via @nestjs/cache-manager + cache-manager-ioredis-yet
+- Standings cached in Redis (24-hour TTL, keys `standings:<competitionCode>`)
 - GET /config — tells frontend whether FOOTBALL_DATA_API_KEY is set
 - Role-based access control (USER / ADMIN) — `RolesGuard` + `@Roles()` decorator, role carried in JWT
 - "← Back to matches" passes `?comp=<code>` in match links, restoring the correct competition tab on return
@@ -125,17 +126,20 @@ All endpoints and frontend pages are fully implemented and wired up.
 ### Outcome enum
 `HOME_WIN | DRAW | AWAY_WIN`
 
-### StandingsCache
-- id, competitionCode (unique), data (Json), cachedAt
-- `data` shape for leagues: `StandingRow[]` (flat array)
-- `data` shape for WC: `GroupStandingRow[]` — `{ group: string; table: StandingRow[] }[]`, sorted A–L
-- Cache bust: WC entry is invalidated if `data[0]` lacks `group`+`table` keys (detects stale flat-format rows)
-
 ### PredictionStats
 - id, userId (unique)
 - total, correct, exactScores
 - homeWinCorrect, drawCorrect, awayWinCorrect
 - accuracy (float), updatedAt
+
+## Redis Cache
+- Wired in `AppModule` via `CacheModule.registerAsync` + `redisInsStore(new Redis(REDIS_URL))`; global, default TTL 5 min (match queries)
+- Standings stored under `standings:<competitionCode>` with 24h TTL (`StandingsService` uses injected `CACHE_MANAGER`, no DB table — the Prisma `StandingsCache` model was removed)
+- Standings value shape for leagues: `StandingRow[]` (flat array)
+- Standings value shape for WC: `GroupStandingRow[]` — `{ group: string; table: StandingRow[] }[]`, sorted A–L
+- Cache bust: WC entry is invalidated if `data[0]` lacks `group`+`table` keys (detects stale flat-format rows)
+- Force sync deletes only `matches:*` keys — never call `cache.reset()`: it flushes the whole Redis DB, which is shared with other local apps (Bull queues etc.) and would also wipe `standings:*`
+- Redis must be running locally (`redis://localhost:6379` by default, e.g. `brew services start redis`)
 
 ## Auth — Roles
 - `Role` enum on User: `USER` (default) | `ADMIN`
@@ -173,6 +177,7 @@ pnpm check        # biome check --write ./apps (lint + format + import sort)
 ## Environment Variables (apps/backend/.env)
 ```
 DATABASE_URL=postgresql://YOUR_USER@localhost:5432/football_db
+REDIS_URL=redis://localhost:6379
 FOOTBALL_DATA_API_KEY=your_key_here
 JWT_SECRET=your_jwt_secret
 PORT=3000                        # optional, defaults to 3000

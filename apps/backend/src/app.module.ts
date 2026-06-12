@@ -1,7 +1,9 @@
 import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { redisInsStore } from 'cache-manager-ioredis-yet';
+import { Redis } from 'ioredis';
 import { AdminModule } from './admin/admin.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
@@ -17,7 +19,16 @@ import { UsersModule } from './users/users.module';
   controllers: [AppController],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    CacheModule.register({ isGlobal: true, ttl: 300_000 }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        store: redisInsStore(
+          new Redis(config.get<string>('REDIS_URL') ?? 'redis://localhost:6379'),
+          { ttl: 300_000 },
+        ),
+      }),
+    }),
     ScheduleModule.forRoot(),
     PrismaModule,
     UsersModule,

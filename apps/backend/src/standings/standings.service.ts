@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { PrismaService } from '../prisma/prisma.service';
+import type { Cache } from 'cache-manager';
 
 const ALLOWED = new Set(['PL', 'PD', 'BL1', 'SA', 'WC']);
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -32,7 +32,7 @@ interface ApiStandingsResponse {
   standings: ApiStandingGroup[];
 }
 
-// Shapes stored in and returned from StandingsCache
+// Shapes stored in and returned from the Redis standings cache
 export interface StandingRow {
   position: number;
   team: { id: number; name: string; shortName: string | null; crest: string | null };
@@ -56,29 +56,22 @@ type CachedStandings = StandingRow[] | GroupStandingRow[];
 
 @Injectable()
 export class StandingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(CACHE_MANAGER) private readonly cache: Cache) {}
 
   async getStandings(competitionCode: string) {
     if (!ALLOWED.has(competitionCode)) {
       throw new BadRequestException(`Standings not available for ${competitionCode}`);
     }
 
-    const cached = await this.prisma.standingsCache.findUnique({
-      where: { competitionCode },
-    });
-
-    // Prisma returns Json as JsonValue; we know the stored shape is CachedStandings
-    const cachedData = cached?.data as unknown as CachedStandings | undefined;
+    const cacheKey = `standings:${competitionCode}`;
+    const cachedData = await this.cache.get<CachedStandings>(cacheKey);
     const cacheValid =
-      cached &&
-      Date.now() - new Date(cached.cachedAt).getTime() < ONE_DAY_MS &&
       Array.isArray(cachedData) &&
       cachedData.length > 0 &&
       // WC stores [{group, table}] — reject old flat [{position,...}] cache entries
       (competitionCode !== 'WC' || ('group' in cachedData[0] && 'table' in cachedData[0]));
     if (cacheValid) {
-      // biome-ignore lint/style/noNonNullAssertion: Array.isArray + length>0 check above guarantees non-null
-      return cachedData!;
+      return cachedData;
     }
 
     const apiKey = process.env.FOOTBALL_DATA_API_KEY;
@@ -124,15 +117,7 @@ export class StandingsService {
 
     console.log(`[StandingsService] ${competitionCode}: saving ${result.length} entries to cache`);
 
-    // CachedStandings is a valid JSON structure; cast required because TypeScript cannot
-    // automatically prove named-property interfaces satisfy Prisma's InputJsonValue index type
-    const resultJson = result as unknown as Prisma.InputJsonValue;
-
-    await this.prisma.standingsCache.upsert({
-      where: { competitionCode },
-      update: { data: resultJson, cachedAt: new Date() },
-      create: { competitionCode, data: resultJson, cachedAt: new Date() },
-    });
+    await this.cache.set(cacheKey, result, ONE_DAY_MS);
 
     return result;
   }

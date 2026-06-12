@@ -180,7 +180,9 @@ export class MatchesService {
       }
     }
 
-    await this.cache.reset();
+    // reset() would flush the whole Redis DB (including standings:* keys) — clear only match query keys
+    const staleKeys = await this.cache.store.keys('matches:*');
+    await Promise.all(staleKeys.map((key) => this.cache.del(key)));
     return { synced: true, count: totalCount };
   }
 
