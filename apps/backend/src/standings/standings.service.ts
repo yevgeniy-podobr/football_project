@@ -111,8 +111,7 @@ export class StandingsService {
       allGroups.length > 1
         ? [...allGroups]
             .sort((a, b) => (a.group ?? '').localeCompare(b.group ?? ''))
-            // biome-ignore lint/style/noNonNullAssertion: filtered to TOTAL type groups which always have group set
-            .map((g) => ({ group: g.group!, table: g.table.map(mapEntry) }))
+            .map((g) => ({ group: g.group ?? '', table: g.table.map(mapEntry) }))
         : (allGroups[0]?.table ?? []).map(mapEntry);
 
     console.log(`[StandingsService] ${competitionCode}: saving ${result.length} entries to cache`);

@@ -57,8 +57,8 @@ export class PredictionsService {
     let resolved = 0;
 
     for (const match of matches) {
-      // biome-ignore lint/style/noNonNullAssertion: only FINISHED matches are queried above; scores are always set
-      const actual = this.toOutcome(match.homeScore!, match.awayScore!);
+      if (match.homeScore == null || match.awayScore == null) continue;
+      const actual = this.toOutcome(match.homeScore, match.awayScore);
 
       await this.prisma.$transaction(async (tx) => {
         for (const prediction of match.predictions) {

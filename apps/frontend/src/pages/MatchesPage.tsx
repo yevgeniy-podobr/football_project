@@ -237,8 +237,7 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
   return (
     <div>
       {seasons.map((season) => {
-        // biome-ignore lint/style/noNonNullAssertion: season was inserted into the map just above
-        const seasonMatches = bySeason.get(season)!;
+        const seasonMatches = bySeason.get(season) ?? [];
         const byStage = new Map<string, Match[]>();
         for (const m of seasonMatches) {
           const key = m.stage ?? 'OTHER';
@@ -464,7 +463,7 @@ const STATUS_SEGMENTS = [
 export default function MatchesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const competition = (COMPETITIONS.find((c) => c.code === searchParams.get('comp'))?.code ??
-    'CL') as CompCode;
+    'WC') as CompCode;
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [stageFilter, setStageFilter] = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
@@ -485,8 +484,7 @@ export default function MatchesPage() {
     staleTime: Infinity,
   });
 
-  // biome-ignore lint/style/noNonNullAssertion: competition is always a valid code from COMPETITIONS
-  const currentComp = COMPETITIONS.find((c) => c.code === competition)!;
+  const currentComp = COMPETITIONS.find((c) => c.code === competition) ?? COMPETITIONS[0];
 
   const {
     data: standings,

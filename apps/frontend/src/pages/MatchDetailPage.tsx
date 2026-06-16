@@ -149,12 +149,12 @@ export default function MatchDetailPage() {
   const { user } = useUser();
   const [form] = Form.useForm();
 
-  // biome-ignore lint/style/noNonNullAssertion: route always provides :id param
-  const matchId = parseInt(id!, 10);
+  const matchId = id ? parseInt(id, 10) : 0;
 
   const { data: match, isLoading } = useQuery({
     queryKey: ['match', matchId],
     queryFn: () => matchesApi.getOne(matchId),
+    enabled: matchId > 0,
   });
 
   const invalidate = () => {
@@ -183,6 +183,8 @@ export default function MatchDetailPage() {
     mutationFn: predictionsApi.delete,
     onSuccess: invalidate,
   });
+
+  if (!id) return null;
 
   if (isLoading) {
     return (

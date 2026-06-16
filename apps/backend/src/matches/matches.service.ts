@@ -107,10 +107,13 @@ export class MatchesService {
 
       // 2. Upsert matches
       for (const m of rawMatches) {
-        // biome-ignore lint/style/noNonNullAssertion: teams were upserted into idMap just above
-        const homeTeamId = idMap.get(m.homeTeam.id)!;
-        // biome-ignore lint/style/noNonNullAssertion: teams were upserted into idMap just above
-        const awayTeamId = idMap.get(m.awayTeam.id)!;
+        const homeTeamId = idMap.get(m.homeTeam.id);
+        const awayTeamId = idMap.get(m.awayTeam.id);
+        if (!homeTeamId || !awayTeamId) {
+          throw new Error(
+            `Team IDs not found in idMap for match ${m.id} — this should never happen`,
+          );
+        }
         // goals is stored as a Prisma Json field; cast is required because TypeScript
         // cannot automatically prove ApiGoal[] satisfies Prisma's InputJsonValue index type
         const goalsJson = (m.goals ?? []) as unknown as Prisma.InputJsonValue;
