@@ -43,7 +43,7 @@ function isCorrect(p: Prediction): boolean {
 // ─── chart constants ─────────────────────────────────────────────────────────
 
 const PIE_COLORS = ['#22c55e', '#ef4444', '#6b7280'];
-const CHART_STYLE = { background: '#1f1f1f', border: '1px solid #374151', borderRadius: 8 };
+const CHART_STYLE = { background: '#fff', border: '1px solid #374151', borderRadius: 8 };
 const AXIS_TICK = { fill: '#9ca3af', fontSize: 12 };
 const GRID_DASH = { strokeDasharray: '3 3', stroke: '#374151' };
 
