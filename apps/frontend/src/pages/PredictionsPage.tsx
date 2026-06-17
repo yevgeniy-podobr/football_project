@@ -108,13 +108,6 @@ export default function PredictionsPage() {
     Correct: byPredicted[k].correct,
   }));
 
-  // Line: last 10 resolved predictions (oldest → newest)
-  const trendData = resolved.slice(-10).map((p, i) => ({
-    name: `#${i + 1}`,
-    Result: isCorrect(p) ? 1 : 0,
-    label: `${p.match?.homeTeam.name} vs ${p.match?.awayTeam.name}`,
-  }));
-
   const kpis = [
     { label: 'Predictions', value: predictions.length, color: undefined },
     { label: 'Correct', value: correctCount, color: '#4ade80' },
@@ -193,37 +186,6 @@ export default function PredictionsPage() {
             </Card>
           </Col>
         </Row>
-      )}
-
-      {trendData.length > 1 && (
-        <Card title={`Recent trend — last ${trendData.length} evaluated`}>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={trendData}>
-              <CartesianGrid {...GRID_DASH} />
-              <XAxis dataKey="name" tick={AXIS_TICK} />
-              <YAxis
-                domain={[0, 1]}
-                tickFormatter={(v) => (v === 1 ? 'Win' : 'Miss')}
-                tick={AXIS_TICK}
-              />
-              <Tooltip
-                contentStyle={CHART_STYLE}
-                formatter={(value: number, _n: string, props: { payload?: { label?: string } }) => [
-                  value === 1 ? 'Correct' : 'Incorrect',
-                  props.payload?.label ?? '',
-                ]}
-              />
-              <Line
-                type="monotone"
-                dataKey="Result"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ fill: '#3b82f6', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
       )}
 
       {/* Prediction list */}
