@@ -3,6 +3,7 @@ import type {
   AdminStats,
   AdminUserDetail,
   AdminUserRow,
+  AiMatchStats,
   GlobalStats,
   GroupStanding,
   Match,
@@ -78,6 +79,7 @@ export const matchesApi = {
   recent: () => api.get<Match[]>('/matches/recent').then((r) => r.data),
   h2h: (homeId: number, awayId: number) =>
     api.get<Match[]>('/matches/h2h', { params: { homeId, awayId } }).then((r) => r.data),
+  getAiStats: (id: number) => api.post<AiMatchStats>(`/matches/${id}/ai-stats`).then((r) => r.data),
 };
 
 export const predictionsApi = {

@@ -11,6 +11,7 @@ A fullstack football app with match data, standings, and predictions tracking wi
 - **Monorepo:** pnpm workspaces
 - **Linter/Formatter:** Biome (`biome.json` at root — 2-space indent, single quotes, trailing commas, import sorting)
 - **External API:** football-data.org (free tier, 10 req/min)
+- **AI:** Google Gemini 2.5 Flash (`@google/genai`) with Google Search grounding
 
 ## Ports
 - Frontend: http://localhost:5173
@@ -67,6 +68,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Cron job (`SchedulerService`) auto-resolves predictions every 5 minutes via `@nestjs/schedule`
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
+- AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats`; Gemini 2.5 Flash + Google Search grounding returns goals, cards, possession, shots; result persisted in `Match.aiStats` (fetched once, served from DB on subsequent loads)
 
 ## Auth
 All endpoints and frontend pages are fully implemented and wired up.
@@ -94,6 +96,12 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `/predictions` route is protected by `ProtectedRoute` component
 - `POST /auth/forgot-password` always returns 200 with the same message regardless of whether the email exists; returns after a 250 ms delay when not found to prevent timing-based enumeration
 
+## AI Stats
+- `POST /matches/:id/ai-stats` — requires `JwtAuthGuard`; returns cached `Match.aiStats` immediately if already populated; otherwise calls Gemini 2.5 Flash with Google Search grounding, parses the JSON response, persists to `Match.aiStats`, and returns the result
+- Response shape: `{ goals: { home, away }, cards: { home, away }, possession: { home, away }, shots: { home, away } }`
+- Each goal: `{ scorer, minute }`; each card: `{ player, minute, type: "yellow"|"red" }`; possession: percentages; shots: `{ onTarget, total }`
+- `AiStatsService` lives in `src/matches/ai-stats.service.ts`; registered in `MatchesModule`
+
 ## Prisma Models
 
 ### User
@@ -110,6 +118,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 - id, externalId (unique), homeTeamId, awayTeamId
 - matchDate, status, stage, group
 - homeScore, awayScore, halfTimeHome, halfTimeAway, winner
+- aiStats (Json, nullable) — populated on demand via Gemini AI
 - competition, competitionCode, season, cachedAt
 - predictions[]
 
@@ -153,11 +162,12 @@ All endpoints and frontend pages are fully implemented and wired up.
 
 ## Known Issues
 - `POST /users` and `GET /users` are legacy endpoints with no auth guard
+- Gemini API occasionally returns 503 (high demand / overloaded); `AiStatsService` does not retry — if this becomes frequent, add exponential-backoff retry around the `ai.models.generateContent` call
 
 ## Data Limitations (free tier)
 - No lineups / squad data
-- No match statistics (possession, shots, fouls)
-- No goals data — `goals` field not returned by free tier on any endpoint; `goals` column dropped from DB
+- No match statistics from football-data.org (possession, shots, fouls not in API response) — superseded by AI stats feature for finished matches
+- No goals data — `goals` field not returned by free tier on any endpoint; `goals` column dropped from DB; goal scorers now sourced via AI stats
 - Standings ✅
 - Max 10 requests/minute — standings cached 24h, matches cached 5 min
 
@@ -179,6 +189,7 @@ pnpm check        # biome check --write ./apps (lint + format + import sort)
 DATABASE_URL=postgresql://YOUR_USER@localhost:5432/football_db
 REDIS_URL=redis://localhost:6379
 FOOTBALL_DATA_API_KEY=your_key_here
+GEMINI_API_KEY=your_gemini_api_key   # Google AI Studio key for AI match stats
 JWT_SECRET=your_jwt_secret
 PORT=3000                        # optional, defaults to 3000
 CORS_ORIGIN=http://localhost:5173 # also used as base URL for password reset links

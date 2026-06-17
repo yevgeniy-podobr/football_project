@@ -12,6 +12,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@google/genai": "^2.8.0",
     "@nestjs/cache-manager": "^2.2.2",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.2.0",

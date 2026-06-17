@@ -1,9 +1,10 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Form, InputNumber, Space, Spin, Typography } from 'antd';
+import { Button, Card, Form, InputNumber, Progress, Space, Spin, Tag, Typography } from 'antd';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
+import type { AiMatchStats } from '../types';
 import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
@@ -35,6 +36,182 @@ function fullDate(dateStr: string) {
 
 function kickoffTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── ai stats card ────────────────────────────────────────────────────────────
+
+const LABEL_STYLE: React.CSSProperties = {
+  fontSize: 11,
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  display: 'block',
+  marginBottom: 12,
+  color: 'rgba(255,255,255,0.45)',
+};
+
+function AiStatsCard({
+  stats,
+  homeTeamName,
+  awayTeamName,
+}: {
+  stats: AiMatchStats;
+  homeTeamName: string;
+  awayTeamName: string;
+}) {
+  const { Text } = Typography;
+
+  return (
+    <Card style={{ marginBottom: 24 }} styles={{ body: { padding: '20px 24px' } }}>
+      <Text style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 20 }}>
+        🤖 AI Match Statistics
+      </Text>
+
+      {/* Goals */}
+      {(stats.goals.home.length > 0 || stats.goals.away.length > 0) && (
+        <div style={{ marginBottom: 20 }}>
+          <Text style={LABEL_STYLE}>Goals</Text>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              {stats.goals.home.map((g) => (
+                <Text key={`hg-${g.minute}-${g.scorer}`} style={{ display: 'block', fontSize: 13 }}>
+                  ⚽ {g.scorer}{' '}
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {g.minute}&apos;
+                  </Text>
+                </Text>
+              ))}
+              {stats.goals.home.length === 0 && (
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  —
+                </Text>
+              )}
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {stats.goals.away.map((g) => (
+                <Text key={`ag-${g.minute}-${g.scorer}`} style={{ display: 'block', fontSize: 13 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {g.minute}&apos;{' '}
+                  </Text>
+                  {g.scorer} ⚽
+                </Text>
+              ))}
+              {stats.goals.away.length === 0 && (
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  —
+                </Text>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cards */}
+      {(stats.cards.home.length > 0 || stats.cards.away.length > 0) && (
+        <div style={{ marginBottom: 20 }}>
+          <Text style={LABEL_STYLE}>Cards</Text>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              {stats.cards.home.map((c) => (
+                <Text key={`hc-${c.minute}-${c.player}`} style={{ display: 'block', fontSize: 13 }}>
+                  <Tag
+                    color={c.type === 'yellow' ? 'gold' : 'red'}
+                    style={{ fontSize: 10, padding: '0 4px', marginRight: 4 }}
+                  >
+                    {c.type === 'yellow' ? '🟨' : '🟥'}
+                  </Tag>
+                  {c.player}{' '}
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {c.minute}&apos;
+                  </Text>
+                </Text>
+              ))}
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              {stats.cards.away.map((c) => (
+                <Text key={`ac-${c.minute}-${c.player}`} style={{ display: 'block', fontSize: 13 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {c.minute}&apos;{' '}
+                  </Text>
+                  {c.player}{' '}
+                  <Tag
+                    color={c.type === 'yellow' ? 'gold' : 'red'}
+                    style={{ fontSize: 10, padding: '0 4px', marginLeft: 4 }}
+                  >
+                    {c.type === 'yellow' ? '🟨' : '🟥'}
+                  </Tag>
+                </Text>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Possession */}
+      {(stats.possession.home > 0 || stats.possession.away > 0) && (
+        <div style={{ marginBottom: 20 }}>
+          <Text style={LABEL_STYLE}>Possession</Text>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 4,
+            }}
+          >
+            <Text style={{ fontSize: 13 }}>{stats.possession.home}%</Text>
+            <Progress
+              percent={stats.possession.home}
+              showInfo={false}
+              strokeColor="#60a5fa"
+              trailColor="#374151"
+              style={{ flex: 1, margin: 0 }}
+            />
+            <Text style={{ fontSize: 13 }}>{stats.possession.away}%</Text>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              {homeTeamName}
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11 }}>
+              {awayTeamName}
+            </Text>
+          </div>
+        </div>
+      )}
+
+      {/* Shots */}
+      {(stats.shots.home.total > 0 || stats.shots.away.total > 0) && (
+        <div>
+          <Text style={LABEL_STYLE}>Shots</Text>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr auto 1fr',
+              gap: 8,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: 600 }}>
+              {stats.shots.home.onTarget}
+              <Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>
+                /{stats.shots.home.total}
+              </Text>
+            </Text>
+            <Text type="secondary" style={{ fontSize: 11, textAlign: 'center' }}>
+              on target / total
+            </Text>
+            <Text style={{ fontSize: 14, fontWeight: 600, textAlign: 'right' }}>
+              {stats.shots.away.onTarget}
+              <Text type="secondary" style={{ fontSize: 12, fontWeight: 400 }}>
+                /{stats.shots.away.total}
+              </Text>
+            </Text>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -81,6 +258,11 @@ export default function MatchDetailPage() {
   const deleteMutation = useMutation({
     mutationFn: predictionsApi.delete,
     onSuccess: invalidate,
+  });
+
+  const aiStatsMutation = useMutation({
+    mutationFn: () => matchesApi.getAiStats(matchId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['match', matchId] }),
   });
 
   if (!id) return null;
@@ -244,6 +426,31 @@ export default function MatchDetailPage() {
           </div>
         </div>
       </Card>
+
+      {/* AI Stats */}
+      {isFinished && match.aiStats && (
+        <AiStatsCard
+          stats={match.aiStats}
+          homeTeamName={match.homeTeam.name}
+          awayTeamName={match.awayTeam.name}
+        />
+      )}
+      {isFinished && !match.aiStats && (
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <Button
+            onClick={() => aiStatsMutation.mutate()}
+            loading={aiStatsMutation.isPending}
+            icon={<span>🤖</span>}
+          >
+            Get AI Stats
+          </Button>
+          {aiStatsMutation.isError && (
+            <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+              Failed to load stats. Try again.
+            </Text>
+          )}
+        </div>
+      )}
 
       {/* Prediction card */}
       <Card>

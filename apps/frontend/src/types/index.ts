@@ -9,6 +9,22 @@ export type MatchStatus =
 
 export type Outcome = 'HOME_WIN' | 'DRAW' | 'AWAY_WIN';
 
+export interface AiMatchStats {
+  goals: {
+    home: { scorer: string; minute: number }[];
+    away: { scorer: string; minute: number }[];
+  };
+  cards: {
+    home: { player: string; minute: number; type: 'yellow' | 'red' }[];
+    away: { player: string; minute: number; type: 'yellow' | 'red' }[];
+  };
+  possession: { home: number; away: number };
+  shots: {
+    home: { onTarget: number; total: number };
+    away: { onTarget: number; total: number };
+  };
+}
+
 export interface Team {
   id: number;
   externalId: number;
@@ -44,6 +60,7 @@ export interface Match {
   halfTimeHome?: number | null;
   halfTimeAway?: number | null;
   winner?: string | null;
+  aiStats?: AiMatchStats | null;
   competition: string;
   competitionCode: string;
   season: string;
