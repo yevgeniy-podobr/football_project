@@ -58,7 +58,6 @@ model Match {
   halfTimeHome Int?
   halfTimeAway Int?
   winner       String?
-  goals           Json         @default("[]")
   competition     String
   competitionCode String       @default("CL")
   season          String

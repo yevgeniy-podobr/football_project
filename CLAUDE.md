@@ -46,7 +46,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Matches list with All / Scheduled / Live / Finished tabs
 - CL matches grouped by stage on the Finished tab (Final, Semi Finals, Quarter Finals, etc.)
 - Stage filter chips on CL Finished tab only
-- Match detail page with goals (scorer, minute, OG/penalty tags), halftime score
+- Match detail page with halftime score
 - Standings / league tables for PL, PD, BL1, SA (with CL spots + relegation zone row highlighting)
 - WC standings: all 12 groups (A–L) rendered in a responsive grid; top 2 per group highlighted green (advance to Round of 32); no relegation zone
 - JWT Authentication — fully implemented on backend and frontend
@@ -110,7 +110,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 - id, externalId (unique), homeTeamId, awayTeamId
 - matchDate, status, stage, group
 - homeScore, awayScore, halfTimeHome, halfTimeAway, winner
-- goals (Json array), competition, competitionCode, season, cachedAt
+- competition, competitionCode, season, cachedAt
 - predictions[]
 
 ### Prediction
@@ -157,7 +157,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 ## Data Limitations (free tier)
 - No lineups / squad data
 - No match statistics (possession, shots, fouls)
-- Goals with scorer name and minute ✅
+- No goals data — `goals` field not returned by free tier on any endpoint; `goals` column dropped from DB
 - Standings ✅
 - Max 10 requests/minute — standings cached 24h, matches cached 5 min
 

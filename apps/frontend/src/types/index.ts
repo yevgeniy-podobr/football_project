@@ -28,17 +28,6 @@ export interface User {
   createdAt: string;
 }
 
-export interface Goal {
-  minute: number;
-  injuryTime?: number | null;
-  type: 'REGULAR' | 'OWN_GOAL' | 'PENALTY';
-  team: { id: number; name: string };
-  scorer: { id: number; name: string };
-  assist?: { id: number; name: string } | null;
-  homeScore: number;
-  awayScore: number;
-}
-
 export interface Match {
   id: number;
   externalId: number;
@@ -55,7 +44,6 @@ export interface Match {
   halfTimeHome?: number | null;
   halfTimeAway?: number | null;
   winner?: string | null;
-  goals: Goal[];
   competition: string;
   competitionCode: string;
   season: string;

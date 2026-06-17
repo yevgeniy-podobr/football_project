@@ -1,10 +1,9 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Form, InputNumber, Space, Spin, Tag, Typography } from 'antd';
+import { Button, Card, Form, InputNumber, Space, Spin, Typography } from 'antd';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
-import type { Goal } from '../types';
 import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
@@ -36,106 +35,6 @@ function fullDate(dateStr: string) {
 
 function kickoffTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
-
-// ─── goals section ────────────────────────────────────────────────────────────
-
-function GoalsSection({ goals, homeTeamId }: { goals: Goal[]; homeTeamId: number }) {
-  if (!goals.length) return null;
-
-  const sorted = [...goals].sort(
-    (a, b) => a.minute - b.minute || (a.injuryTime ?? 0) - (b.injuryTime ?? 0),
-  );
-  const homeGoals = sorted.filter((g) => g.team.id === homeTeamId);
-  const awayGoals = sorted.filter((g) => g.team.id !== homeTeamId);
-
-  function goalMin(g: Goal) {
-    return g.injuryTime ? `${g.minute}+${g.injuryTime}'` : `${g.minute}'`;
-  }
-
-  function goalTag(type: Goal['type']) {
-    if (type === 'OWN_GOAL')
-      return (
-        <Tag color="error" style={{ fontSize: 11, margin: '0 0 0 4px' }}>
-          OG
-        </Tag>
-      );
-    if (type === 'PENALTY')
-      return (
-        <Tag color="warning" style={{ fontSize: 11, margin: '0 0 0 4px' }}>
-          P
-        </Tag>
-      );
-    return null;
-  }
-
-  return (
-    <Card style={{ marginBottom: 24 }}>
-      <Text
-        type="secondary"
-        style={{
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: '0.1em',
-          display: 'block',
-          marginBottom: 16,
-        }}
-      >
-        Goals
-      </Text>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div>
-          {homeGoals.map((g) => (
-            <Space
-              key={`${g.minute}-${g.scorer.name}`}
-              style={{ display: 'flex', marginBottom: 8 }}
-            >
-              <Text
-                type="secondary"
-                style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums', minWidth: 40 }}
-              >
-                {goalMin(g)}
-              </Text>
-              <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
-              {goalTag(g.type)}
-            </Space>
-          ))}
-          {homeGoals.length === 0 && (
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              —
-            </Text>
-          )}
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          {awayGoals.map((g) => (
-            <Space
-              key={`${g.minute}-${g.scorer.name}`}
-              style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}
-            >
-              {goalTag(g.type)}
-              <Text style={{ fontSize: 13 }}>{g.scorer.name}</Text>
-              <Text
-                type="secondary"
-                style={{
-                  fontSize: 13,
-                  fontVariantNumeric: 'tabular-nums',
-                  minWidth: 40,
-                  textAlign: 'left',
-                }}
-              >
-                {goalMin(g)}
-              </Text>
-            </Space>
-          ))}
-          {awayGoals.length === 0 && (
-            <Text type="secondary" style={{ fontSize: 13 }}>
-              —
-            </Text>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
 }
 
 // ─── page ─────────────────────────────────────────────────────────────────────
@@ -229,7 +128,6 @@ export default function MatchDetailPage() {
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
-  const goals = (match.goals ?? []) as Goal[];
 
   const predictionBgColor =
     isCorrect === null
@@ -346,11 +244,6 @@ export default function MatchDetailPage() {
           </div>
         </div>
       </Card>
-
-      {/* Goals */}
-      {showScore && goals.length > 0 && (
-        <GoalsSection goals={goals} homeTeamId={match.homeTeamId} />
-      )}
 
       {/* Prediction card */}
       <Card>

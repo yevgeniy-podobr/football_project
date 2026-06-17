@@ -1,6 +1,5 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import axios from 'axios';
 import type { Cache } from 'cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,15 +26,6 @@ interface ApiTeam {
   crest: string | null;
 }
 
-interface ApiGoal {
-  minute: number;
-  injuryTime: number | null;
-  type: string;
-  team: { id: number; name: string };
-  scorer: { id: number; name: string };
-  assist: { id: number; name: string } | null;
-}
-
 interface ApiMatch {
   id: number;
   utcDate: string;
@@ -49,7 +39,6 @@ interface ApiMatch {
     halfTime: { home: number | null; away: number | null };
     winner: string | null;
   };
-  goals: ApiGoal[];
   season: { startDate: string };
 }
 
@@ -114,10 +103,6 @@ export class MatchesService {
             `Team IDs not found in idMap for match ${m.id} — this should never happen`,
           );
         }
-        // goals is stored as a Prisma Json field; cast is required because TypeScript
-        // cannot automatically prove ApiGoal[] satisfies Prisma's InputJsonValue index type
-        const goalsJson = (m.goals ?? []) as unknown as Prisma.InputJsonValue;
-
         await tx.match.upsert({
           where: { externalId: m.id },
           update: {
@@ -127,7 +112,6 @@ export class MatchesService {
             halfTimeHome: m.score?.halfTime?.home ?? null,
             halfTimeAway: m.score?.halfTime?.away ?? null,
             winner: m.score?.winner ?? null,
-            goals: goalsJson,
             cachedAt: now,
           },
           create: {
@@ -143,7 +127,6 @@ export class MatchesService {
             halfTimeHome: m.score?.halfTime?.home ?? null,
             halfTimeAway: m.score?.halfTime?.away ?? null,
             winner: m.score?.winner ?? null,
-            goals: goalsJson,
             competition: data.competition?.name ?? code,
             competitionCode: code,
             season: String(m.season?.startDate?.split('-')[0] ?? '2024'),
