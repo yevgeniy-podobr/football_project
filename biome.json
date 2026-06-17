@@ -25,7 +25,8 @@
       "correctness": {
         "useExhaustiveDependencies": "off",
         "noNestedComponentDefinitions": "off",
-        "useUniqueElementIds": "off"
+        "useUniqueElementIds": "off",
+        "noUnusedImports": "error"
       },
       "suspicious": {
         "noArrayIndexKey": "off"

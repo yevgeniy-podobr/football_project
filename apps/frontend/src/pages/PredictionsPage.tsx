@@ -1,21 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Col, Row, Space, Statistic, Tag, Typography } from 'antd';
 import { Link } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { predictionsApi } from '../api/client';
 import { useUser } from '../context/UserContext';
 import type { Outcome, Prediction } from '../types';
@@ -44,8 +30,6 @@ function isCorrect(p: Prediction): boolean {
 
 const PIE_COLORS = ['#22c55e', '#ef4444', '#6b7280'];
 const CHART_STYLE = { background: '#fff', border: '1px solid #374151', borderRadius: 8 };
-const AXIS_TICK = { fill: '#9ca3af', fontSize: 12 };
-const GRID_DASH = { strokeDasharray: '3 3', stroke: '#374151' };
 
 // ─── outcome tag ─────────────────────────────────────────────────────────────
 
@@ -102,11 +86,6 @@ export default function PredictionsPage() {
     byPredicted[po].total++;
     if (isCorrect(p)) byPredicted[po].correct++;
   }
-  const barData = (Object.keys(byPredicted) as Outcome[]).map((k) => ({
-    name: OUTCOME_LABEL[k],
-    Total: byPredicted[k].total,
-    Correct: byPredicted[k].correct,
-  }));
 
   const kpis = [
     { label: 'Predictions', value: predictions.length, color: undefined },
@@ -166,22 +145,6 @@ export default function PredictionsPage() {
                   <Tooltip contentStyle={CHART_STYLE} />
                   <Legend />
                 </PieChart>
-              </ResponsiveContainer>
-            </Card>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <Card title="Accuracy by predicted outcome">
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={barData}>
-                  <CartesianGrid {...GRID_DASH} />
-                  <XAxis dataKey="name" tick={AXIS_TICK} />
-                  <YAxis allowDecimals={false} tick={AXIS_TICK} />
-                  <Tooltip contentStyle={CHART_STYLE} />
-                  <Legend />
-                  <Bar dataKey="Total" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Correct" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
               </ResponsiveContainer>
             </Card>
           </Col>
