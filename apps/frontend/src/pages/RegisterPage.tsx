@@ -10,7 +10,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleFinish = async (values: { username: string; email: string; password: string }) => {
+  const handleFinish = async (values: {
+    username: string;
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+  }) => {
     setError('');
     setLoading(true);
     try {
@@ -40,6 +46,14 @@ export default function RegisterPage() {
           rules={[{ required: true, min: 3, message: 'Username must be at least 3 characters' }]}
         >
           <Input autoFocus />
+        </Form.Item>
+
+        <Form.Item label="First name" name="firstName">
+          <Input />
+        </Form.Item>
+
+        <Form.Item label="Last name" name="lastName">
+          <Input />
         </Form.Item>
 
         <Form.Item

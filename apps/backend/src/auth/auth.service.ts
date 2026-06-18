@@ -32,7 +32,13 @@ export class AuthService {
     });
   }
 
-  async register(username: string, email: string, password: string) {
+  async register(
+    username: string,
+    email: string,
+    password: string,
+    firstName?: string,
+    lastName?: string,
+  ) {
     if (await this.usersService.findByEmail(email)) {
       throw new ConflictException('Email already in use');
     }
@@ -41,7 +47,13 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await this.usersService.createWithPassword(username, email, passwordHash);
+    const user = await this.usersService.createWithPassword(
+      username,
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+    );
     return { access_token: this.sign(user), user };
   }
 
@@ -82,6 +94,11 @@ export class AuthService {
     });
   }
 
+  async updateProfile(userId: number, firstName: string | null, lastName: string | null) {
+    const user = await this.usersService.updateProfile(userId, firstName, lastName);
+    return { access_token: this.sign(user), user };
+  }
+
   async resetPassword(token: string, newPassword: string) {
     const user = await this.usersService.findByResetToken(token);
     if (!user?.resetTokenExpiry) throw new BadRequestException('Invalid or expired token');
@@ -91,12 +108,21 @@ export class AuthService {
     await this.usersService.updatePassword(user.id, passwordHash);
   }
 
-  private sign(user: { id: number; email: string; username: string | null; role: Role }) {
+  private sign(user: {
+    id: number;
+    email: string;
+    username: string | null;
+    role: Role;
+    firstName: string | null;
+    lastName: string | null;
+  }) {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       username: user.username,
       role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
     };
     return this.jwtService.sign(payload);
   }

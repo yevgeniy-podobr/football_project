@@ -40,6 +40,8 @@ export interface User {
   username?: string | null;
   email: string;
   name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   role: Role;
   createdAt: string;
 }

@@ -38,8 +38,13 @@ api.interceptors.response.use(
 );
 
 export const authApi = {
-  register: (data: { username: string; email: string; password: string }) =>
-    api.post<{ access_token: string; user: User }>('/auth/register', data).then((r) => r.data),
+  register: (data: {
+    username: string;
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+  }) => api.post<{ access_token: string; user: User }>('/auth/register', data).then((r) => r.data),
   login: (data: { email: string; password: string }) =>
     api.post<{ access_token: string; user: User }>('/auth/login', data).then((r) => r.data),
   me: () => api.get<User>('/auth/me').then((r) => r.data),
@@ -49,6 +54,8 @@ export const authApi = {
     api
       .post<{ message: string }>('/auth/reset-password', { token, newPassword })
       .then((r) => r.data),
+  updateProfile: (data: { firstName?: string | null; lastName?: string | null }) =>
+    api.patch<{ access_token: string; user: User }>('/auth/profile', data).then((r) => r.data),
 };
 
 export const configApi = {

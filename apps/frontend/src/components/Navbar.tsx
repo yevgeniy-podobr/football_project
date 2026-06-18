@@ -55,13 +55,18 @@ export default function Navbar() {
         {user ? (
           <>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              {user.username ?? user.email}
+              {user.firstName
+                ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+                : (user.username ?? user.email)}
             </Text>
             {user.role === 'ADMIN' && (
               <Tag color="orange" style={{ margin: 0 }}>
                 Admin
               </Tag>
             )}
+            <Button size="small" onClick={() => navigate('/profile')}>
+              Profile
+            </Button>
             <Button size="small" onClick={logout}>
               Sign out
             </Button>

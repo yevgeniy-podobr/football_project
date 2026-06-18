@@ -17,9 +17,29 @@ export class UsersService {
     return this.prisma.user.findFirst({ where: { resetToken: token } });
   }
 
-  createWithPassword(username: string, email: string, passwordHash: string) {
+  createWithPassword(
+    username: string,
+    email: string,
+    passwordHash: string,
+    firstName?: string,
+    lastName?: string,
+  ) {
     return this.prisma.user.create({
-      data: { username, email, passwordHash, name: username },
+      data: {
+        username,
+        email,
+        passwordHash,
+        name: username,
+        firstName: firstName ?? null,
+        lastName: lastName ?? null,
+      },
+    });
+  }
+
+  updateProfile(id: number, firstName: string | null, lastName: string | null) {
+    return this.prisma.user.update({
+      where: { id },
+      data: { firstName, lastName },
     });
   }
 

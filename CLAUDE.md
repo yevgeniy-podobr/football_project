@@ -71,24 +71,28 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 All endpoints and frontend pages are fully implemented and wired up.
 
 ### Backend endpoints
-- `POST /auth/register` — username + email + password → returns JWT + user
+- `POST /auth/register` — username + email + password + optional firstName/lastName → returns JWT + user
 - `POST /auth/login` — email + password → returns JWT + user
-- `GET /auth/me` — returns current user (JwtAuthGuard)
+- `GET /auth/me` — returns current user from JWT payload (JwtAuthGuard)
+- `PATCH /auth/profile` — update firstName/lastName for logged-in user (JwtAuthGuard); returns new JWT + updated user
 - `POST /auth/forgot-password` — sends reset email via SMTP
 - `POST /auth/reset-password` — validates token (15-min expiry), updates password
 
 ### Frontend pages
 - `/login` — LoginPage
-- `/register` — RegisterPage
+- `/register` — RegisterPage (optional firstName/lastName fields)
+- `/profile` — ProfilePage (edit firstName/lastName; username/email shown read-only; protected)
 - `/forgot-password` — ForgotPasswordPage
 - `/reset-password?token=...` — ResetPasswordPage
 - `/admin` — AdminPage (ADMIN role required; redirects to `/` otherwise)
 
 ### Implementation details
 - Passwords hashed with bcryptjs (10 rounds)
-- JWT signed with HS256, expires in 7 days; payload includes `sub`, `email`, `username`, `role`
+- JWT signed with HS256, expires in 7 days; payload includes `sub`, `email`, `username`, `role`, `firstName`, `lastName`
 - Token stored in `localStorage` under key `cl-predictor-token`; user object stored under `cl-predictor-user`
-- `GET /auth/me` returns the decoded JWT payload (`sub`, `email`, `username`, `role`) — not a live DB lookup; role or username changes require re-login to take effect
+- `GET /auth/me` returns the decoded JWT payload — not a live DB lookup; role or username changes require re-login to take effect
+- `PATCH /auth/profile` re-signs the JWT with updated firstName/lastName and returns `{ access_token, user }`; frontend calls `updateUser()` from UserContext to refresh localStorage
+- Navbar shows `firstName lastName` when set, falls back to username then email
 - 401 interceptor in axios client auto-redirects to `/login` (except on `/auth/*` endpoints)
 - `/predictions` route is protected by `ProtectedRoute` component
 - `POST /auth/forgot-password` always returns 200 with the same message regardless of whether the email exists; returns after a 250 ms delay when not found to prevent timing-based enumeration
@@ -102,7 +106,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 ## Prisma Models
 
 ### User
-- id, username (unique, optional), email (unique), name (optional)
+- id, username (unique, optional), email (unique), name (optional), firstName (optional), lastName (optional)
 - role (Role enum, default USER)
 - passwordHash (optional), resetToken (optional), resetTokenExpiry (optional)
 - predictions[], stats (PredictionStats), createdAt

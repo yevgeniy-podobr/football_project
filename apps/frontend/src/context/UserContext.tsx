@@ -6,6 +6,7 @@ interface UserContextValue {
   token: string | null;
   login: (user: User, token: string) => void;
   logout: () => void;
+  updateUser: (user: User, token: string) => void;
 }
 
 const UserContext = createContext<UserContextValue>({
@@ -13,6 +14,7 @@ const UserContext = createContext<UserContextValue>({
   token: null,
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
 });
 
 const USER_KEY = 'cl-predictor-user';
@@ -37,6 +39,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setToken(t);
   };
 
+  const updateUser = (u: User, t: string) => {
+    localStorage.setItem(USER_KEY, JSON.stringify(u));
+    localStorage.setItem(TOKEN_KEY, t);
+    setUser(u);
+    setToken(t);
+  };
+
   const logout = () => {
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
@@ -45,7 +54,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <UserContext.Provider value={{ user, token, login, logout }}>{children}</UserContext.Provider>
+    <UserContext.Provider value={{ user, token, login, logout, updateUser }}>
+      {children}
+    </UserContext.Provider>
   );
 }
 

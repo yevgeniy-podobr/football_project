@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
-import { IsEmail, IsString, MinLength } from 'class-validator';
+import { Body, Controller, Get, HttpCode, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
 import type { JwtPayload } from './jwt.strategy';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -15,6 +15,24 @@ class RegisterDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+}
+
+class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  firstName?: string | null;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string | null;
 }
 
 class LoginDto {
@@ -45,7 +63,13 @@ export class AuthController {
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto.username, dto.email, dto.password);
+    return this.authService.register(
+      dto.username,
+      dto.email,
+      dto.password,
+      dto.firstName,
+      dto.lastName,
+    );
   }
 
   @Post('login')
@@ -65,6 +89,14 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: 'Password updated successfully.' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('profile')
+  updateProfile(@Req() req: { user: JwtPayload }, @Body() dto: UpdateProfileDto) {
+    const firstName = dto.firstName !== undefined ? dto.firstName : null;
+    const lastName = dto.lastName !== undefined ? dto.lastName : null;
+    return this.authService.updateProfile(req.user.sub, firstName, lastName);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import MatchDetailPage from './pages/MatchDetailPage';
 import MatchesPage from './pages/MatchesPage';
 import PredictionsPage from './pages/PredictionsPage';
+import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -50,6 +51,14 @@ function AppRoutes() {
                 <AdminRoute>
                   <AdminPage />
                 </AdminRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
               }
             />
             <Route path="/login" element={<LoginPage />} />
