@@ -81,19 +81,6 @@ export interface Prediction {
   updatedAt: string;
 }
 
-export interface PredictionStats {
-  id: number;
-  userId: number;
-  total: number;
-  correct: number;
-  exactScores: number;
-  homeWinCorrect: number;
-  drawCorrect: number;
-  awayWinCorrect: number;
-  accuracy: number;
-  updatedAt: string;
-}
-
 export interface Standing {
   position: number;
   team: {
@@ -116,14 +103,6 @@ export interface Standing {
 export interface GroupStanding {
   group: string;
   table: Standing[];
-}
-
-export interface GlobalStats {
-  users: number;
-  total: number;
-  correct: number;
-  exactScores: number;
-  averageAccuracy: number;
 }
 
 export interface AdminStats {

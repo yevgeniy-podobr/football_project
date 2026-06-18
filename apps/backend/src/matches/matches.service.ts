@@ -202,35 +202,4 @@ export class MatchesService {
     if (!match) throw new NotFoundException(`Match #${id} not found`);
     return match;
   }
-
-  async findUpcoming() {
-    return this.prisma.match.findMany({
-      where: { status: { in: ['SCHEDULED', 'TIMED'] } },
-      orderBy: { matchDate: 'desc' },
-      take: 5,
-      include: { homeTeam: true, awayTeam: true },
-    });
-  }
-
-  async findRecent() {
-    return this.prisma.match.findMany({
-      where: { status: 'FINISHED' },
-      orderBy: { matchDate: 'desc' },
-      take: 10,
-      include: { homeTeam: true, awayTeam: true, predictions: true },
-    });
-  }
-
-  async findByTeams(homeId: number, awayId: number) {
-    return this.prisma.match.findMany({
-      where: {
-        OR: [
-          { homeTeamId: homeId, awayTeamId: awayId },
-          { homeTeamId: awayId, awayTeamId: homeId },
-        ],
-      },
-      orderBy: { matchDate: 'desc' },
-      include: { homeTeam: true, awayTeam: true },
-    });
-  }
 }

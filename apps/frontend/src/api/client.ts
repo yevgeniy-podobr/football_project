@@ -4,11 +4,9 @@ import type {
   AdminUserDetail,
   AdminUserRow,
   AiMatchStats,
-  GlobalStats,
   GroupStanding,
   Match,
   Prediction,
-  PredictionStats,
   Standing,
   User,
 } from '../types';
@@ -70,10 +68,6 @@ export const matchesApi = {
   getOne: (id: number) => api.get<Match>(`/matches/${id}`).then((r) => r.data),
   sync: (force = false) =>
     api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
-  upcoming: () => api.get<Match[]>('/matches/upcoming').then((r) => r.data),
-  recent: () => api.get<Match[]>('/matches/recent').then((r) => r.data),
-  h2h: (homeId: number, awayId: number) =>
-    api.get<Match[]>('/matches/h2h', { params: { homeId, awayId } }).then((r) => r.data),
   getAiStats: (id: number) => api.post<AiMatchStats>(`/matches/${id}/ai-stats`).then((r) => r.data),
 };
 
@@ -90,12 +84,6 @@ export const predictionsApi = {
 export const standingsApi = {
   get: (competitionCode: string) =>
     api.get<Standing[] | GroupStanding[]>(`/standings/${competitionCode}`).then((r) => r.data),
-};
-
-export const statsApi = {
-  getGlobal: () => api.get<GlobalStats>('/stats').then((r) => r.data),
-  getUser: (userId: number) => api.get<PredictionStats>(`/stats/${userId}`).then((r) => r.data),
-  recalculate: (userId: number) => api.post(`/stats/recalculate/${userId}`).then((r) => r.data),
 };
 
 export const adminApi = {

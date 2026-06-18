@@ -20,24 +20,6 @@ export class MatchesController {
     return this.matchesService.fetchAndSync(force === 'true');
   }
 
-  @Get('upcoming')
-  findUpcoming() {
-    return this.matchesService.findUpcoming();
-  }
-
-  @Get('recent')
-  findRecent() {
-    return this.matchesService.findRecent();
-  }
-
-  @Get('h2h')
-  findH2H(
-    @Query('homeId', ParseIntPipe) homeId: number,
-    @Query('awayId', ParseIntPipe) awayId: number,
-  ) {
-    return this.matchesService.findByTeams(homeId, awayId);
-  }
-
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.matchesService.findOne(id);
