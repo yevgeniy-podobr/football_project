@@ -57,11 +57,6 @@ export const configApi = {
   get: () => api.get<{ footballApiConfigured: boolean }>('/config').then((r) => r.data),
 };
 
-export const usersApi = {
-  upsert: (data: { email: string; name?: string }) =>
-    api.post<User>('/users', data).then((r) => r.data),
-};
-
 export const matchesApi = {
   getAll: (status?: string, competition?: string) =>
     api

@@ -40,17 +40,4 @@ export class UsersService {
       data: { passwordHash, resetToken: null, resetTokenExpiry: null },
     });
   }
-
-  /** Legacy upsert — kept for backward compatibility. */
-  upsert(email: string, name?: string) {
-    return this.prisma.user.upsert({
-      where: { email },
-      update: name ? { name } : {},
-      create: { email, name: name ?? null },
-    });
-  }
-
-  findAll() {
-    return this.prisma.user.findMany({ orderBy: { createdAt: 'asc' } });
-  }
 }

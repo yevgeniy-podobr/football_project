@@ -161,7 +161,6 @@ All endpoints and frontend pages are fully implemented and wired up.
 - To promote a user to admin: `UPDATE "User" SET role = 'ADMIN' WHERE email = '...'`
 
 ## Known Issues
-- `POST /users` and `GET /users` are legacy endpoints with no auth guard
 - Gemini API occasionally returns 503 (high demand / overloaded); `AiStatsService` does not retry — if this becomes frequent, add exponential-backoff retry around the `ai.models.generateContent` call
 
 ## Data Limitations (free tier)
