@@ -25,6 +25,16 @@ export interface AiMatchStats {
   };
 }
 
+export interface AiMatchPreview {
+  form: { home: string; away: string };
+  keyPlayers: {
+    home: { name: string; note: string }[];
+    away: { name: string; note: string }[];
+  };
+  headToHead: string | null;
+  summary: string;
+}
+
 export interface Team {
   id: number;
   externalId: number;
@@ -63,6 +73,7 @@ export interface Match {
   halfTimeAway?: number | null;
   winner?: string | null;
   aiStats?: AiMatchStats | null;
+  aiPreview?: AiMatchPreview | null;
   competition: string;
   competitionCode: string;
   season: string;

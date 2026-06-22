@@ -39,4 +39,10 @@ export class MatchesController {
   getAiStats(@Param('id', ParseIntPipe) id: number) {
     return this.aiStatsService.getOrFetchStats(id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/ai-preview')
+  getAiPreview(@Param('id', ParseIntPipe) id: number) {
+    return this.aiStatsService.getOrFetchPreview(id);
+  }
 }

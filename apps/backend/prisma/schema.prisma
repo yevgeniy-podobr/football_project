@@ -61,6 +61,7 @@ model Match {
   halfTimeAway Int?
   winner       String?
   aiStats         Json?
+  aiPreview       Json?
   competition     String
   competitionCode String       @default("CL")
   season          String

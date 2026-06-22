@@ -4,7 +4,7 @@ import { Button, Card, Form, InputNumber, Progress, Space, Spin, Tag, Typography
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
-import type { AiMatchStats } from '../types';
+import type { AiMatchPreview, AiMatchStats } from '../types';
 import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
@@ -214,6 +214,116 @@ function AiStatsCard({
   );
 }
 
+// ─── ai preview card ──────────────────────────────────────────────────────────
+
+const FORM_COLOR: Record<string, string> = { W: '#4ade80', D: '#facc15', L: '#f87171' };
+
+function FormBadges({ form }: { form: string }) {
+  return (
+    <Space size={4}>
+      {form
+        .toUpperCase()
+        .split('')
+        .map((ch, i) => (
+          <Tag
+            key={i}
+            style={{
+              background: FORM_COLOR[ch] ?? '#6b7280',
+              color: '#000',
+              fontWeight: 700,
+              fontSize: 12,
+              padding: '1px 6px',
+              margin: 0,
+              border: 'none',
+            }}
+          >
+            {ch}
+          </Tag>
+        ))}
+    </Space>
+  );
+}
+
+function AiPreviewCard({
+  preview,
+  homeTeamName,
+  awayTeamName,
+}: {
+  preview: AiMatchPreview;
+  homeTeamName: string;
+  awayTeamName: string;
+}) {
+  return (
+    <Card style={{ marginBottom: 24 }} styles={{ body: { padding: '20px 24px' } }}>
+      <Text style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 20 }}>
+        🔮 AI Match Preview
+      </Text>
+
+      {/* Form */}
+      <div style={{ marginBottom: 20 }}>
+        <Text style={LABEL_STYLE}>Recent Form (last 5)</Text>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6 }}>
+              {homeTeamName}
+            </Text>
+            <FormBadges form={preview.form.home} />
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6 }}>
+              {awayTeamName}
+            </Text>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <FormBadges form={preview.form.away} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Key players */}
+      <div style={{ marginBottom: 20 }}>
+        <Text style={LABEL_STYLE}>Key Players</Text>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            {preview.keyPlayers.home.map((p) => (
+              <div key={p.name} style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 13, fontWeight: 600, display: 'block' }}>{p.name}</Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {p.note}
+                </Text>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            {preview.keyPlayers.away.map((p) => (
+              <div key={p.name} style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 13, fontWeight: 600, display: 'block' }}>{p.name}</Text>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {p.note}
+                </Text>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Head to head */}
+      {preview.headToHead && (
+        <div style={{ marginBottom: 20 }}>
+          <Text style={LABEL_STYLE}>Head to Head</Text>
+          <Text style={{ fontSize: 13 }}>{preview.headToHead}</Text>
+        </div>
+      )}
+
+      {/* Summary */}
+      <div>
+        <Text style={LABEL_STYLE}>Preview</Text>
+        <Text style={{ fontSize: 13, lineHeight: 1.6 }}>{preview.summary}</Text>
+      </div>
+    </Card>
+  );
+}
+
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function MatchDetailPage() {
@@ -265,6 +375,11 @@ export default function MatchDetailPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['match', matchId] }),
   });
 
+  const aiPreviewMutation = useMutation({
+    mutationFn: () => matchesApi.getAiPreview(matchId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['match', matchId] }),
+  });
+
   if (!id) return null;
 
   if (isLoading) {
@@ -284,6 +399,7 @@ export default function MatchDetailPage() {
 
   const prediction = user ? match.predictions.find((p) => p.userId === user.id) : null;
   const isFinished = match.status === 'FINISHED';
+  const isScheduled = match.status === 'SCHEDULED' || match.status === 'TIMED';
   const showScore = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
   const isCorrect =
@@ -447,6 +563,31 @@ export default function MatchDetailPage() {
           {aiStatsMutation.isError && (
             <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
               Failed to load stats. Try again.
+            </Text>
+          )}
+        </div>
+      )}
+
+      {/* AI Preview */}
+      {isScheduled && match.aiPreview && (
+        <AiPreviewCard
+          preview={match.aiPreview}
+          homeTeamName={match.homeTeam.name}
+          awayTeamName={match.awayTeam.name}
+        />
+      )}
+      {isScheduled && !match.aiPreview && (
+        <div style={{ marginBottom: 24, textAlign: 'center' }}>
+          <Button
+            onClick={() => aiPreviewMutation.mutate()}
+            loading={aiPreviewMutation.isPending}
+            icon={<span>🔮</span>}
+          >
+            Get AI Preview
+          </Button>
+          {aiPreviewMutation.isError && (
+            <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+              Failed to load preview. Try again.
             </Text>
           )}
         </div>

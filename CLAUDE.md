@@ -66,6 +66,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
 - AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats`; Gemini 2.5 Flash + Google Search grounding returns goals, cards, possession, shots; result persisted in `Match.aiStats` (fetched once, served from DB on subsequent loads)
+- AI Match Preview — on scheduled match detail page: "🔮 Get AI Preview" button calls `POST /matches/:id/ai-preview`; Gemini 2.5 Flash + Google Search grounding returns recent form (W/D/L badges), key players, H2H note, summary; persisted in `Match.aiPreview`; endpoint returns 400 if match is not SCHEDULED/TIMED
 
 ## Auth
 All endpoints and frontend pages are fully implemented and wired up.
@@ -101,7 +102,15 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `POST /matches/:id/ai-stats` — requires `JwtAuthGuard`; returns cached `Match.aiStats` immediately if already populated; otherwise calls Gemini 2.5 Flash with Google Search grounding, parses the JSON response, persists to `Match.aiStats`, and returns the result
 - Response shape: `{ goals: { home, away }, cards: { home, away }, possession: { home, away }, shots: { home, away } }`
 - Each goal: `{ scorer, minute }`; each card: `{ player, minute, type: "yellow"|"red" }`; possession: percentages; shots: `{ onTarget, total }`
-- `AiStatsService` lives in `src/matches/ai-stats.service.ts`; registered in `MatchesModule`
+- `AiStatsService` lives in `src/matches/ai-stats.service.ts`; registered in `MatchesModule`; also handles `getOrFetchPreview` for AI Preview
+
+## AI Preview
+- `POST /matches/:id/ai-preview` — requires `JwtAuthGuard`; returns 400 if match is not SCHEDULED/TIMED; returns cached `Match.aiPreview` if already populated; otherwise calls Gemini 2.5 Flash with Google Search grounding
+- Response shape: `{ form: { home, away }, keyPlayers: { home, away }, headToHead, summary }`
+- `form`: 5-char string of W/D/L (most recent last); rendered as colored badges on the frontend
+- `keyPlayers`: `{ name, note }[]` — 1–2 players per team
+- `headToHead`: string or null
+- `summary`: 2–3 sentence preview text
 
 ## Prisma Models
 
@@ -119,7 +128,8 @@ All endpoints and frontend pages are fully implemented and wired up.
 - id, externalId (unique), homeTeamId, awayTeamId
 - matchDate, status, stage, group
 - homeScore, awayScore, halfTimeHome, halfTimeAway, winner
-- aiStats (Json, nullable) — populated on demand via Gemini AI
+- aiStats (Json, nullable) — populated on demand via Gemini AI for finished matches
+- aiPreview (Json, nullable) — populated on demand via Gemini AI for scheduled matches
 - competition, competitionCode, season, cachedAt
 - predictions[]
 
