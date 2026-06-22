@@ -739,7 +739,14 @@ export default function MatchDetailPage() {
               }}
             </Form.Item>
 
-            <Button type="primary" htmlType="submit" loading={isPending} block size="large">
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isPending}
+              block
+              size="large"
+              disabled={aiStatsMutation.isPending || aiPreviewMutation.isPending}
+            >
               {prediction ? 'Update Prediction' : 'Save Prediction'}
             </Button>
           </Form>
