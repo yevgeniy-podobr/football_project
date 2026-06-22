@@ -5,12 +5,22 @@ import { useUserStore } from '../store/userStore';
 
 const { Title, Text } = Typography;
 
+const normalize = (v: string | null | undefined) => v?.trim() ?? '';
+
 export default function ProfilePage() {
   const user = useUserStore((s) => s.user);
   const updateUser = useUserStore((s) => s.updateUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [form] = Form.useForm<{ firstName: string; lastName: string }>();
+
+  const firstName = Form.useWatch('firstName', form);
+  const lastName = Form.useWatch('lastName', form);
+
+  const hasChanged =
+    normalize(firstName) !== normalize(user?.firstName) ||
+    normalize(lastName) !== normalize(user?.lastName);
 
   const handleFinish = async (values: { firstName?: string; lastName?: string }) => {
     setError('');
@@ -61,6 +71,7 @@ export default function ProfilePage() {
       </Card>
 
       <Form
+        form={form}
         layout="vertical"
         onFinish={handleFinish}
         initialValues={{
@@ -76,13 +87,18 @@ export default function ProfilePage() {
           <Input placeholder="Last name" />
         </Form.Item>
 
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        {error && <Alert title={error} type="error" showIcon style={{ marginBottom: 16 }} />}
         {success && (
-          <Alert message="Profile saved." type="success" showIcon style={{ marginBottom: 16 }} />
+          <Alert title="Profile saved." type="success" showIcon style={{ marginBottom: 16 }} />
         )}
 
         <Form.Item>
-          <Button type="primary" htmlType="submit" loading={loading}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            disabled={!hasChanged || loading}
+          >
             Save
           </Button>
         </Form.Item>

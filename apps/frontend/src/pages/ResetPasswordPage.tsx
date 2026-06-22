@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div style={{ maxWidth: 360, margin: '64px auto 0', textAlign: 'center' }}>
-        <Alert message="Invalid reset link — no token found." type="error" showIcon />
+        <Alert title="Invalid reset link — no token found." type="error" showIcon />
         <Typography.Paragraph style={{ marginTop: 16 }}>
           <Link to="/forgot-password">Request a new link</Link>
         </Typography.Paragraph>
@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
           <Input.Password />
         </Form.Item>
 
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        {error && <Alert title={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>

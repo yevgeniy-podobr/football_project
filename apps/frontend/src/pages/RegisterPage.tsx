@@ -72,7 +72,7 @@ export default function RegisterPage() {
           <Input.Password />
         </Form.Item>
 
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        {error && <Alert title={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>

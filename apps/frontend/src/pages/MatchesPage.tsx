@@ -613,7 +613,7 @@ export default function MatchesPage() {
               <Spin size="large" />
             </div>
           )}
-          {standingsError && <Alert message="Failed to load standings." type="error" />}
+          {standingsError && <Alert title="Failed to load standings." type="error" />}
           {standings &&
             standings.length > 0 &&
             (isGroupStandings(standings) ? (

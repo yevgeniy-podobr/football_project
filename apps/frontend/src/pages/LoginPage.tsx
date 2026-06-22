@@ -36,7 +36,7 @@ export default function LoginPage() {
         Sign in
       </Typography.Title>
 
-      {notice && <Alert message={notice} type="success" showIcon style={{ marginBottom: 16 }} />}
+      {notice && <Alert title={notice} type="success" showIcon style={{ marginBottom: 16 }} />}
 
       <Form layout="vertical" onFinish={handleFinish} autoComplete="off">
         <Form.Item
@@ -55,7 +55,7 @@ export default function LoginPage() {
           <Input.Password />
         </Form.Item>
 
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
+        {error && <Alert title={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
