@@ -192,7 +192,16 @@ pnpm db:studio    # open Prisma Studio
 pnpm lint         # biome lint ./apps
 pnpm format       # biome format --write ./apps
 pnpm check        # biome check --write ./apps (lint + format + import sort)
+pnpm build        # build backend (nest build) then frontend (tsc + vite build)
 ```
+
+## CI
+GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push/PR to `main`:
+1. Install deps (`pnpm install --frozen-lockfile`)
+2. Lint (`pnpm lint` — Biome)
+3. Build (`pnpm build` — NestJS + Vite)
+
+No deployment steps — CI only.
 
 ## Environment Variables (apps/backend/.env)
 ```
