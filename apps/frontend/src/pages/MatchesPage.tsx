@@ -137,7 +137,15 @@ function PredictionBadge({ p }: { p: Match['predictions'][number] }) {
 
 const SHOW_SCORE_STATUSES = new Set(['FINISHED', 'IN_PLAY', 'PAUSED']);
 
-function MatchRow({ match, userId }: { match: Match; userId?: number }) {
+function MatchRow({
+  match,
+  userId,
+  backQuery,
+}: {
+  match: Match;
+  userId?: number;
+  backQuery?: string;
+}) {
   const navigate = useNavigate();
   const showScore = SHOW_SCORE_STATUSES.has(match.status);
   const myPrediction = userId != null ? match.predictions.find((p) => p.userId === userId) : null;
@@ -145,7 +153,9 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
   return (
     <Card
       hoverable
-      onClick={() => navigate(`/matches/${match.id}?comp=${match.competitionCode}`)}
+      onClick={() =>
+        navigate(`/matches/${match.id}?${backQuery ?? `comp=${match.competitionCode}`}`)
+      }
       styles={{ body: { padding: '12px 16px' } }}
       style={{ marginBottom: 8, cursor: 'pointer' }}
     >
@@ -236,7 +246,15 @@ function MatchRow({ match, userId }: { match: Match; userId?: number }) {
 
 // ─── grouped match list (UCL only) ───────────────────────────────────────────
 
-function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: number }) {
+function GroupedMatchList({
+  matches,
+  userId,
+  backQuery,
+}: {
+  matches: Match[];
+  userId?: number;
+  backQuery?: string;
+}) {
   const bySeason = new Map<string, Match[]>();
   for (const m of matches) {
     if (!bySeason.has(m.season)) bySeason.set(m.season, []);
@@ -291,7 +309,7 @@ function GroupedMatchList({ matches, userId }: { matches: Match[]; userId?: numb
                   </Text>
                 </Text>
                 {byStage.get(stage)?.map((m) => (
-                  <MatchRow key={m.id} match={m} userId={userId} />
+                  <MatchRow key={m.id} match={m} userId={userId} backQuery={backQuery} />
                 ))}
               </div>
             ))}
@@ -475,10 +493,10 @@ export default function MatchesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const competition = (COMPETITIONS.find((c) => c.code === searchParams.get('comp'))?.code ??
     'WC') as CompCode;
-  const [statusFilter, setStatusFilter] = useState<string | undefined>();
+  const statusFilter = searchParams.get('status') || undefined;
+  const page = Number.parseInt(searchParams.get('page') ?? '1', 10) || 1;
   const [stageFilter, setStageFilter] = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
-  const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const user = useUserStore((s) => s.user);
 
@@ -513,18 +531,31 @@ export default function MatchesPage() {
     staleTime: 60 * 60 * 1000,
   });
 
+  const backQuery = (() => {
+    const p = new URLSearchParams({ comp: competition });
+    const status = searchParams.get('status');
+    const pg = searchParams.get('page');
+    if (status) p.set('status', status);
+    if (pg && pg !== '1') p.set('page', pg);
+    return p.toString();
+  })();
+
   const handleCompetition = (code: CompCode) => {
+    // Omitting status and page from the new params resets them to their defaults
     setSearchParams({ comp: code }, { replace: true });
-    setStatusFilter(undefined);
     setStageFilter(undefined);
     setView('matches');
-    setPage(1);
   };
 
   const handleStatusFilter = (value: string) => {
-    setStatusFilter(value === '' ? undefined : value);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set('status', value);
+      else next.delete('status');
+      next.delete('page');
+      return next;
+    });
     setStageFilter(undefined);
-    setPage(1);
   };
 
   const isFinishedTab = statusFilter === 'FINISHED';
@@ -668,9 +699,11 @@ export default function MatchesPage() {
           {visibleMatches &&
             visibleMatches.length > 0 &&
             (isFinishedTab && !stageFilter && currentComp.hasStages ? (
-              <GroupedMatchList matches={visibleMatches} userId={user?.id} />
+              <GroupedMatchList matches={visibleMatches} userId={user?.id} backQuery={backQuery} />
             ) : (
-              visibleMatches.map((m) => <MatchRow key={m.id} match={m} userId={user?.id} />)
+              visibleMatches.map((m) => (
+                <MatchRow key={m.id} match={m} userId={user?.id} backQuery={backQuery} />
+              ))
             ))}
           {!isLoading && !error && total > 0 && (
             <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
@@ -682,7 +715,12 @@ export default function MatchesPage() {
                 showSizeChanger
                 showTotal={(t) => `${t} matches`}
                 onChange={(p, ps) => {
-                  setPage(p);
+                  setSearchParams((prev) => {
+                    const next = new URLSearchParams(prev);
+                    if (p === 1) next.delete('page');
+                    else next.set('page', String(p));
+                    return next;
+                  });
                   setLimit(ps);
                 }}
               />

@@ -61,7 +61,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Standings cached in Redis (24-hour TTL, keys `standings:<competitionCode>`)
 - GET /config — tells frontend whether FOOTBALL_DATA_API_KEY is set
 - Role-based access control (USER / ADMIN) — `RolesGuard` + `@Roles()` decorator, role carried in JWT
-- "← Back to matches" passes `?comp=<code>` in match links, restoring the correct competition tab on return
+- "← Back to matches" passes `?comp=<code>&status=<status>&page=<page>` in match links; MatchesPage reads all three params on mount to restore competition tab, status filter, and pagination page on return
 - Cron job (`SchedulerService`) auto-resolves predictions every 5 minutes via `@nestjs/schedule`
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)

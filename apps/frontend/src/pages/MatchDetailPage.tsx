@@ -331,6 +331,8 @@ export default function MatchDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const comp = searchParams.get('comp');
+  const statusParam = searchParams.get('status');
+  const pageParam = searchParams.get('page');
   const qc = useQueryClient();
   const user = useUserStore((s) => s.user);
   const [form] = Form.useForm();
@@ -441,7 +443,13 @@ export default function MatchDetailPage() {
       <Button
         type="text"
         icon={<LeftOutlined />}
-        onClick={() => (comp ? navigate(`/?comp=${comp}`) : navigate(-1))}
+        onClick={() => {
+          if (!comp) return navigate(-1);
+          const p = new URLSearchParams({ comp });
+          if (statusParam) p.set('status', statusParam);
+          if (pageParam && pageParam !== '1') p.set('page', pageParam);
+          navigate(`/?${p.toString()}`);
+        }}
         style={{ marginBottom: 24, paddingLeft: 0, color: 'rgba(255,255,255,0.45)' }}
       >
         Back to matches
