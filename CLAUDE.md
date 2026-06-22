@@ -203,6 +203,52 @@ GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push/PR to `
 
 No deployment steps — CI only.
 
+## Deployment (Render)
+
+Configuration lives in `render.yaml` at repo root (Render Blueprint). Connect the repo in the Render dashboard and it auto-provisions both services.
+
+### Backend — Web Service (`football-predictor-api`)
+- **Build:** `pnpm install --frozen-lockfile && pnpm db:generate && pnpm --filter backend build && pnpm db:push`
+  - `pnpm db:push` runs on every deploy — keeps the DB schema in sync with `schema.prisma`. Safe for additive changes; for destructive changes use `prisma migrate deploy` instead.
+  - `DATABASE_URL` must be set as a **build-time** env var (Render makes all `envVars` from `render.yaml` available at build time automatically).
+- **Start:** `pnpm --filter backend start:prod` → `node dist/main`
+- `PORT` is set automatically by Render — `main.ts` reads `process.env.PORT`.
+- `CORS_ORIGIN` must be set to the deployed frontend URL (e.g. `https://football-predictor.onrender.com`).
+
+### Frontend — Static Site (`football-predictor-frontend`)
+- **Build:** `pnpm install --frozen-lockfile && pnpm --filter frontend build`
+- **Publish dir:** `apps/frontend/dist`
+- SPA fallback rewrite `/* → /index.html` is configured in `render.yaml`.
+- `VITE_API_URL` must be set to the backend URL **including the `/api` suffix** (e.g. `https://football-predictor-api.onrender.com/api`). Vite bakes this into the bundle at build time. Without it the frontend falls back to the relative `/api` path, which only works when both services share a domain.
+
+### Required env vars on Render (backend service)
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Render PostgreSQL connection string (from the database dashboard) |
+| `REDIS_URL` | External Redis — use Upstash (free tier); Render free tier has no Redis add-on |
+| `FOOTBALL_DATA_API_KEY` | football-data.org API key |
+| `GEMINI_API_KEY` | Google AI Studio key |
+| `JWT_SECRET` | Random secret, at least 32 chars |
+| `CORS_ORIGIN` | Deployed frontend URL, no trailing slash |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Mailtrap (or production SMTP) |
+| `PORT` | Set automatically by Render — do not set manually |
+
+### Required env vars on Render (frontend static site)
+| Variable | Notes |
+|---|---|
+| `VITE_API_URL` | Full backend API base URL, e.g. `https://football-predictor-api.onrender.com/api` |
+
+### First-time setup order
+1. Create a Render PostgreSQL database → copy the internal connection string to `DATABASE_URL`
+2. Create an Upstash Redis instance → copy the `rediss://` URL to `REDIS_URL`
+3. Deploy the backend service — `pnpm db:push` runs automatically in the build and creates all tables
+4. Deploy the frontend static site — set `VITE_API_URL` pointing at the live backend
+5. Set `CORS_ORIGIN` on the backend to the live frontend URL and redeploy
+
+### Free-tier caveats
+- Render free Web Services spin down after 15 min of inactivity — first request after idle takes ~30 s
+- Upstash Redis free tier: 10k commands/day; cached responses count against this
+
 ## Environment Variables (apps/backend/.env)
 ```
 DATABASE_URL=postgresql://YOUR_USER@localhost:5432/football_db

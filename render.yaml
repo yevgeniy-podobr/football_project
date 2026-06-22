@@ -1,0 +1,51 @@
+services:
+  # ─── Backend (NestJS Web Service) ────────────────────────────────────────────
+  - type: web
+    name: football-predictor-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: >-
+      pnpm install --frozen-lockfile &&
+      pnpm db:generate &&
+      pnpm --filter backend build &&
+      pnpm db:push
+    startCommand: pnpm --filter backend start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render sets PORT automatically — do not hardcode
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: FOOTBALL_DATA_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false   # set to the deployed frontend URL, e.g. https://football-predictor.onrender.com
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+
+  # ─── Frontend (React + Vite Static Site) ─────────────────────────────────────
+  - type: static
+    name: football-predictor-frontend
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter frontend build
+    staticPublishPath: ./apps/frontend/dist
+    envVars:
+      # Baked into the bundle at build time by Vite — must include /api suffix
+      - key: VITE_API_URL
+        sync: false   # e.g. https://football-predictor-api.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
