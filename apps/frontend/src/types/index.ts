@@ -107,6 +107,13 @@ export interface GroupStanding {
   table: Standing[];
 }
 
+export interface PaginatedMatches {
+  data: Match[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface AdminStats {
   users: number;
   predictions: number;

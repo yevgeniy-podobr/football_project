@@ -6,6 +6,7 @@ import type {
   AiMatchStats,
   GroupStanding,
   Match,
+  PaginatedMatches,
   Prediction,
   Standing,
   User,
@@ -63,12 +64,14 @@ export const configApi = {
 };
 
 export const matchesApi = {
-  getAll: (status?: string, competition?: string) =>
+  getAll: (status?: string, competition?: string, page = 1, limit = 10) =>
     api
-      .get<Match[]>('/matches', {
+      .get<PaginatedMatches>('/matches', {
         params: {
           ...(status ? { status } : {}),
           ...(competition ? { competition } : {}),
+          page,
+          limit,
         },
       })
       .then((r) => r.data),

@@ -44,7 +44,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 
 ## Features Implemented
 - Multi-competition tabs (WC, CL, PL, PD, BL1, SA) with color-coded badges; WC is the first tab
-- Matches list with All / Scheduled / Live / Finished tabs
+- Matches list with All / Scheduled / Live / Finished tabs; server-side pagination (10/20/30 per page, Ant Design Pagination below the list)
 - CL matches grouped by stage on the Finished tab (Final, Semi Finals, Quarter Finals, etc.)
 - Stage filter chips on CL Finished tab only
 - Match detail page with halftime score
@@ -57,7 +57,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Predictions page with KPI strip + pie/bar/line charts (Recharts)
 - POST /predictions/resolve-all — scores all unresolved predictions for finished matches
 - Matches sync from football-data.org (auto on request if stale >5 min, or forced)
-- Redis cache (5-min TTL) on match queries via @nestjs/cache-manager + cache-manager-ioredis-yet
+- Redis cache (5-min TTL) on match queries via @nestjs/cache-manager + cache-manager-ioredis-yet; cache key includes page+limit
 - Standings cached in Redis (24-hour TTL, keys `standings:<competitionCode>`)
 - GET /config — tells frontend whether FOOTBALL_DATA_API_KEY is set
 - Role-based access control (USER / ADMIN) — `RolesGuard` + `@Roles()` decorator, role carried in JWT

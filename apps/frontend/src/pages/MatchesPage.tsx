@@ -1,5 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert, Card, Segmented, Space, Spin, Table, Tabs, Tag, Typography } from 'antd';
+import {
+  Alert,
+  Card,
+  Pagination,
+  Segmented,
+  Space,
+  Spin,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+} from 'antd';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { configApi, matchesApi, standingsApi } from '../api/client';
@@ -467,16 +478,21 @@ export default function MatchesPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [stageFilter, setStageFilter] = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const user = useUserStore((s) => s.user);
 
   const {
-    data: matches,
+    data: matchesPage,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['matches', competition, statusFilter],
-    queryFn: () => matchesApi.getAll(statusFilter, competition),
+    queryKey: ['matches', competition, statusFilter, page, limit],
+    queryFn: () => matchesApi.getAll(statusFilter, competition, page, limit),
   });
+
+  const matches = matchesPage?.data;
+  const total = matchesPage?.total ?? 0;
 
   const { data: config } = useQuery({
     queryKey: ['config'],
@@ -502,11 +518,13 @@ export default function MatchesPage() {
     setStatusFilter(undefined);
     setStageFilter(undefined);
     setView('matches');
+    setPage(1);
   };
 
   const handleStatusFilter = (value: string) => {
     setStatusFilter(value === '' ? undefined : value);
     setStageFilter(undefined);
+    setPage(1);
   };
 
   const isFinishedTab = statusFilter === 'FINISHED';
@@ -636,7 +654,7 @@ export default function MatchesPage() {
           )}
           {error && (
             <Alert
-              message="Failed to load matches."
+              title="Failed to load matches."
               description="Make sure the backend is running on port 3000."
               type="error"
               showIcon
@@ -654,6 +672,22 @@ export default function MatchesPage() {
             ) : (
               visibleMatches.map((m) => <MatchRow key={m.id} match={m} userId={user?.id} />)
             ))}
+          {!isLoading && !error && total > 0 && (
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+              <Pagination
+                current={page}
+                pageSize={limit}
+                total={total}
+                pageSizeOptions={[10, 20, 30]}
+                showSizeChanger
+                showTotal={(t) => `${t} matches`}
+                onChange={(p, ps) => {
+                  setPage(p);
+                  setLimit(ps);
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

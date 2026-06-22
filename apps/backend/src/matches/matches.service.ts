@@ -172,26 +172,34 @@ export class MatchesService {
     return { synced: true, count: totalCount };
   }
 
-  async findAll(status?: string, competition?: string) {
+  async findAll(status?: string, competition?: string, page = 1, limit = 10) {
     const statuses = status ? status.split(',').map((s) => s.trim()) : null;
-    const cacheKey = `matches:${competition ?? 'all'}:${statuses?.sort().join(',') ?? 'all'}`;
+    const cacheKey = `matches:${competition ?? 'all'}:${statuses?.sort().join(',') ?? 'all'}:${page}:${limit}`;
 
     const cached = await this.cache.get(cacheKey);
     if (cached) return cached;
 
     await this.fetchAndSync().catch((err) => console.error('Background sync failed:', err.message));
 
-    const matches = await this.prisma.match.findMany({
-      where: {
-        ...(statuses ? { status: { in: statuses } } : {}),
-        ...(competition ? { competitionCode: competition } : {}),
-      },
-      orderBy: { matchDate: 'desc' },
-      include: { homeTeam: true, awayTeam: true, predictions: true },
-    });
+    const where = {
+      ...(statuses ? { status: { in: statuses } } : {}),
+      ...(competition ? { competitionCode: competition } : {}),
+    };
 
-    await this.cache.set(cacheKey, matches, CACHE_TTL_MS);
-    return matches;
+    const [total, data] = await Promise.all([
+      this.prisma.match.count({ where }),
+      this.prisma.match.findMany({
+        where,
+        orderBy: { matchDate: 'desc' },
+        include: { homeTeam: true, awayTeam: true, predictions: true },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+
+    const result = { data, total, page, limit };
+    await this.cache.set(cacheKey, result, CACHE_TTL_MS);
+    return result;
   }
 
   async findOne(id: number) {
