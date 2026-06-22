@@ -3,7 +3,7 @@ import { Alert, Card, Segmented, Space, Spin, Table, Tabs, Tag, Typography } fro
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { configApi, matchesApi, standingsApi } from '../api/client';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../types';
 
 const { Text } = Typography;
@@ -467,7 +467,7 @@ export default function MatchesPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [stageFilter, setStageFilter] = useState<string | undefined>();
   const [view, setView] = useState<'matches' | 'table'>('matches');
-  const { user } = useUser();
+  const user = useUserStore((s) => s.user);
 
   const {
     data: matches,

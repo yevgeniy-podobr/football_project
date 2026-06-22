@@ -4,7 +4,7 @@
 A fullstack football app with match data, standings, and predictions tracking with accuracy stats.
 
 ## Stack
-- **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons
+- **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons + Zustand (global auth state)
 - **Backend:** NestJS + TypeScript
 - **Database:** PostgreSQL + Prisma
 - **Cache:** Redis (ioredis + cache-manager-ioredis-yet via @nestjs/cache-manager)
@@ -91,7 +91,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 - JWT signed with HS256, expires in 7 days; payload includes `sub`, `email`, `username`, `role`, `firstName`, `lastName`
 - Token stored in `localStorage` under key `cl-predictor-token`; user object stored under `cl-predictor-user`
 - `GET /auth/me` returns the decoded JWT payload — not a live DB lookup; role or username changes require re-login to take effect
-- `PATCH /auth/profile` re-signs the JWT with updated firstName/lastName and returns `{ access_token, user }`; frontend calls `updateUser()` from UserContext to refresh localStorage
+- `PATCH /auth/profile` re-signs the JWT with updated firstName/lastName and returns `{ access_token, user }`; frontend calls `updateUser()` from the Zustand `useUserStore` to refresh state and localStorage
 - Navbar shows `firstName lastName` when set, falls back to username then email
 - 401 interceptor in axios client auto-redirects to `/login` (except on `/auth/*` endpoints)
 - `/predictions` route is protected by `ProtectedRoute` component

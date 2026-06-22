@@ -2,7 +2,6 @@ import { ConfigProvider, Layout, theme } from 'antd';
 import type { ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import { UserProvider, useUser } from './context/UserContext';
 import AdminPage from './pages/AdminPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import LoginPage from './pages/LoginPage';
@@ -12,17 +11,19 @@ import PredictionsPage from './pages/PredictionsPage';
 import ProfilePage from './pages/ProfilePage';
 import RegisterPage from './pages/RegisterPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import { useUserStore } from './store/userStore';
 
 const { Content } = Layout;
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { token } = useUser();
+  const token = useUserStore((s) => s.token);
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: ReactNode }) {
-  const { token, user } = useUser();
+  const token = useUserStore((s) => s.token);
+  const user = useUserStore((s) => s.user);
   if (!token) return <Navigate to="/login" replace />;
   if (user?.role !== 'ADMIN') return <Navigate to="/" replace />;
   return <>{children}</>;
@@ -75,11 +76,9 @@ function AppRoutes() {
 export default function App() {
   return (
     <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
-      <UserProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </UserProvider>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </ConfigProvider>
   );
 }

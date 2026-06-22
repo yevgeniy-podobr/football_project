@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Form, InputNumber, Progress, Space, Spin, Tag, Typography } from 'antd';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 import type { AiMatchStats } from '../types';
 import { CompBadge } from './MatchesPage';
 
@@ -222,7 +222,7 @@ export default function MatchDetailPage() {
   const [searchParams] = useSearchParams();
   const comp = searchParams.get('comp');
   const qc = useQueryClient();
-  const { user } = useUser();
+  const user = useUserStore((s) => s.user);
   const [form] = Form.useForm();
 
   const matchId = id ? parseInt(id, 10) : 0;

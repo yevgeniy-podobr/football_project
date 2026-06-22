@@ -3,7 +3,7 @@ import { Button, Card, Col, Row, Space, Statistic, Tag, Typography } from 'antd'
 import { Link } from 'react-router-dom';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { predictionsApi } from '../api/client';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 import type { Outcome, Prediction } from '../types';
 
 const { Text, Title } = Typography;
@@ -43,7 +43,7 @@ function OutcomeTag({ p }: { p: Prediction }) {
 // ─── component ───────────────────────────────────────────────────────────────
 
 export default function PredictionsPage() {
-  const { user } = useUser();
+  const user = useUserStore((s) => s.user);
   const qc = useQueryClient();
 
   const { data: predictions = [] } = useQuery({

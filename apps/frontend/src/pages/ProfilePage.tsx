@@ -1,12 +1,13 @@
 import { Alert, Button, Card, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
 import { authApi } from '../api/client';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 
 const { Title, Text } = Typography;
 
 export default function ProfilePage() {
-  const { user, updateUser } = useUser();
+  const user = useUserStore((s) => s.user);
+  const updateUser = useUserStore((s) => s.updateUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);

@@ -2,11 +2,11 @@ import { Alert, Button, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/client';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useUser();
+  const setUser = useUserStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,7 +21,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const { user, access_token } = await authApi.register(values);
-      login(user, access_token);
+      setUser(user, access_token);
       navigate('/');
     } catch (err: unknown) {
       const msg =

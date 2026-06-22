@@ -1,12 +1,13 @@
 import { Button, Layout, Menu, Space, Tag, Typography } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
+import { useUserStore } from '../store/userStore';
 
 const { Header } = Layout;
 const { Text } = Typography;
 
 export default function Navbar() {
-  const { user, logout } = useUser();
+  const user = useUserStore((s) => s.user);
+  const logout = useUserStore((s) => s.logout);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
