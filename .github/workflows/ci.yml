@@ -35,5 +35,8 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Test (frontend)
+        run: pnpm test:frontend
+
       - name: Build
         run: pnpm build

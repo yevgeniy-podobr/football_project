@@ -213,8 +213,10 @@ pnpm test:frontend    # run frontend unit/integration tests once (vitest run)
 ## CI
 GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push/PR to `main`:
 1. Install deps (`pnpm install --frozen-lockfile`)
-2. Lint (`pnpm lint` — Biome)
-3. Build (`pnpm build` — NestJS + Vite)
+2. Generate Prisma client (`pnpm db:generate`)
+3. Lint (`pnpm lint` — Biome)
+4. Test (`pnpm test:frontend` — Vitest, frontend only)
+5. Build (`pnpm build` — NestJS + Vite)
 
 No deployment steps — CI only.
 
