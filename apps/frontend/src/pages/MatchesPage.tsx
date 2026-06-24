@@ -16,6 +16,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { configApi, matchesApi, standingsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
 import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../types';
+import { STAGE_ORDER, seasonLabel, stageLabel } from '../utils/matchUtils';
 
 const { Text } = Typography;
 
@@ -73,37 +74,8 @@ function StatusBadge({ status }: { status: MatchStatus }) {
 
 // ─── stage metadata ───────────────────────────────────────────────────────────
 
-const STAGE_ORDER: Record<string, number> = {
-  FINAL: 0,
-  SEMI_FINALS: 1,
-  QUARTER_FINALS: 2,
-  LAST_16: 3,
-  PLAYOFFS: 4,
-  LEAGUE_STAGE: 5,
-};
-
-const STAGE_LABEL: Record<string, string> = {
-  FINAL: 'Final',
-  SEMI_FINALS: 'Semi Finals',
-  QUARTER_FINALS: 'Quarter Finals',
-  LAST_16: 'Round of 16',
-  PLAYOFFS: 'Play-offs',
-  LEAGUE_STAGE: 'League Stage',
-  REGULAR_SEASON: 'Regular Season',
-};
-
-function stageLabel(stage: string) {
-  return STAGE_LABEL[stage] ?? stage.replace(/_/g, ' ');
-}
-
 function sortedStages(stages: string[]) {
   return [...stages].sort((a, b) => (STAGE_ORDER[a] ?? 99) - (STAGE_ORDER[b] ?? 99));
-}
-
-function seasonLabel(season: string) {
-  const year = parseInt(season, 10);
-  if (Number.isNaN(year)) return season;
-  return `${year}/${String(year + 1).slice(-2)}`;
 }
 
 // ─── prediction badge ─────────────────────────────────────────────────────────

@@ -183,17 +183,32 @@ All endpoints and frontend pages are fully implemented and wired up.
 
 ## Scripts
 ```bash
-pnpm dev          # run both frontend and backend
-pnpm dev:backend  # backend only (port 3000)
-pnpm dev:frontend # frontend only (port 5173)
-pnpm db:push      # apply Prisma schema changes
-pnpm db:migrate   # run Prisma migrations
-pnpm db:studio    # open Prisma Studio
-pnpm lint         # biome lint ./apps
-pnpm format       # biome format --write ./apps
-pnpm check        # biome check --write ./apps (lint + format + import sort)
-pnpm build        # build backend (nest build) then frontend (tsc + vite build)
+pnpm dev              # run both frontend and backend
+pnpm dev:backend      # backend only (port 3000)
+pnpm dev:frontend     # frontend only (port 5173)
+pnpm db:push          # apply Prisma schema changes
+pnpm db:migrate       # run Prisma migrations
+pnpm db:studio        # open Prisma Studio
+pnpm lint             # biome lint ./apps
+pnpm format           # biome format --write ./apps
+pnpm check            # biome check --write ./apps (lint + format + import sort)
+pnpm build            # build backend (nest build) then frontend (tsc + vite build)
+pnpm test:frontend    # run frontend unit/integration tests once (vitest run)
 ```
+
+## Frontend Testing
+- **Framework:** Vitest 2.x + React Testing Library + jsdom
+- **Compatible with Vite 5** — vitest@2 is required (vitest@4 requires Vite 6+)
+- **Config:** `test` block in `apps/frontend/vite.config.ts` (`/// <reference types="vitest" />` at top)
+- **Setup file:** `apps/frontend/src/test/setup.ts` — imports `@testing-library/jest-dom`, mocks `window.matchMedia` and `ResizeObserver` (required by Ant Design in jsdom)
+- **Globals:** `true` — vitest injects `describe`/`it`/`expect`/`vi` globally; test files use explicit imports for biome compatibility
+- **tsconfig types:** `["vite/client", "vitest/globals"]`
+- **Utility functions** shared by tests live in `apps/frontend/src/utils/matchUtils.ts` (`stageLabel`, `seasonLabel`, `STAGE_ORDER`)
+- **Test files** live in `apps/frontend/src/test/`
+
+### Ant Design notes in tests
+- `Form.useWatch` triggers internal state updates that React's test renderer doesn't track — produces cosmetic `act(...)` warnings but tests pass correctly; use `waitFor` for assertions that depend on form state settling
+- Zustand stores can be seeded directly with `useStore.setState({ ... })` — no Provider needed
 
 ## CI
 GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push/PR to `main`:
