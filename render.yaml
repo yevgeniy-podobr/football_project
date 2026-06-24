@@ -1,3 +1,8 @@
+databases:
+  - name: football-predictor-db
+    plan: free
+    region: oregon
+
 services:
   # ─── Backend (NestJS Web Service) ────────────────────────────────────────────
   - type: web
@@ -16,7 +21,9 @@ services:
         value: production
       # Render sets PORT automatically — do not hardcode
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: football-predictor-db
+          property: connectionString
       - key: REDIS_URL
         sync: false
       - key: FOOTBALL_DATA_API_KEY

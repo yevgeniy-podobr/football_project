@@ -252,7 +252,7 @@ Configuration lives in `render.yaml` at repo root (Render Blueprint). Connect th
 ### Required env vars on Render (backend service)
 | Variable | Notes |
 |---|---|
-| `DATABASE_URL` | Render PostgreSQL connection string (from the database dashboard) |
+| `DATABASE_URL` | Auto-wired by Blueprint via `fromDatabase` — do not set manually |
 | `REDIS_URL` | External Redis — use Upstash (free tier); Render free tier has no Redis add-on |
 | `FOOTBALL_DATA_API_KEY` | football-data.org API key |
 | `GEMINI_API_KEY` | Google AI Studio key |
@@ -267,10 +267,10 @@ Configuration lives in `render.yaml` at repo root (Render Blueprint). Connect th
 | `VITE_API_URL` | Full backend API base URL, e.g. `https://football-predictor-api.onrender.com/api` |
 
 ### First-time setup order
-1. Create a Render PostgreSQL database → copy the internal connection string to `DATABASE_URL`
-2. Create an Upstash Redis instance → copy the `rediss://` URL to `REDIS_URL`
-3. Deploy the backend service — `pnpm db:push` runs automatically in the build and creates all tables
-4. Deploy the frontend static site — set `VITE_API_URL` pointing at the live backend
+1. Connect the repo in Render and apply the Blueprint — Render auto-provisions the PostgreSQL database (`football-predictor-db`) and wires `DATABASE_URL` automatically via `fromDatabase`
+2. Create an Upstash Redis instance → copy the `rediss://` URL to `REDIS_URL` on the backend service
+3. `pnpm db:push` runs automatically in the backend build and creates all tables
+4. Set `VITE_API_URL` on the frontend static site pointing at the live backend URL
 5. Set `CORS_ORIGIN` on the backend to the live frontend URL and redeploy
 
 ### Free-tier caveats
