@@ -37,7 +37,8 @@ services:
         sync: false
 
   # ─── Frontend (React + Vite Static Site) ─────────────────────────────────────
-  - type: static
+  - type: web
+    runtime: static
     name: football-predictor-frontend
     buildCommand: pnpm install --frozen-lockfile && pnpm --filter frontend build
     staticPublishPath: ./apps/frontend/dist
