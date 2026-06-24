@@ -194,6 +194,7 @@ pnpm format           # biome format --write ./apps
 pnpm check            # biome check --write ./apps (lint + format + import sort)
 pnpm build            # build backend (nest build) then frontend (tsc + vite build)
 pnpm test:frontend    # run frontend unit/integration tests once (vitest run)
+pnpm test:backend     # run backend unit tests once (jest)
 ```
 
 ## Frontend Testing
@@ -210,13 +211,23 @@ pnpm test:frontend    # run frontend unit/integration tests once (vitest run)
 - `Form.useWatch` triggers internal state updates that React's test renderer doesn't track — produces cosmetic `act(...)` warnings but tests pass correctly; use `waitFor` for assertions that depend on form state settling
 - Zustand stores can be seeded directly with `useStore.setState({ ... })` — no Provider needed
 
+## Backend Testing
+- **Framework:** Jest 29 + ts-jest 29 + @nestjs/testing 10
+- **Jest version locked to 29** — ts-jest has no v30 release yet; install `jest@29` / `@types/jest@29` (not latest)
+- **Config:** `"jest"` block in `apps/backend/package.json`; `rootDir: "src"`, `testRegex: "*.spec.ts"`, `testEnvironment: "node"`
+- **ts-jest config:** inline `tsconfig` override `{ "types": ["jest", "node"] }` so Jest globals are typed without touching `tsconfig.json`
+- **Test files** colocated with source: `src/**/*.spec.ts`
+- **Mocking strategy:** inject mocks via `Test.createTestingModule` providers; mock Prisma as a plain object matching the methods called; use `jest.mock('bcryptjs')` for bcrypt to intercept `hash`/`compare` before the service calls them
+- **`$transaction` mock:** implement as `jest.fn().mockImplementation((fn) => fn(mockTx))` where `mockTx` carries the required model methods
+
 ## CI
 GitHub Actions workflow at `.github/workflows/ci.yml` runs on every push/PR to `main`:
 1. Install deps (`pnpm install --frozen-lockfile`)
 2. Generate Prisma client (`pnpm db:generate`)
 3. Lint (`pnpm lint` — Biome)
-4. Test (`pnpm test:frontend` — Vitest, frontend only)
-5. Build (`pnpm build` — NestJS + Vite)
+4. Test frontend (`pnpm test:frontend` — Vitest)
+5. Test backend (`pnpm test:backend` — Jest)
+6. Build (`pnpm build` — NestJS + Vite)
 
 No deployment steps — CI only.
 

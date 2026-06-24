@@ -38,5 +38,8 @@ jobs:
       - name: Test (frontend)
         run: pnpm test:frontend
 
+      - name: Test (backend)
+        run: pnpm test:backend
+
       - name: Build
         run: pnpm build

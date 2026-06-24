@@ -20,6 +20,7 @@
     "db:generate": "pnpm --filter backend db:generate",
     "db:studio": "pnpm --filter backend db:studio",
     "test:frontend": "pnpm --filter frontend test:run",
+    "test:backend": "pnpm --filter backend test",
     "lint": "biome lint ./apps",
     "format": "biome format --write ./apps",
     "check": "biome check --write ./apps",
