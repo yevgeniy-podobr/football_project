@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
   Card,
+  Grid,
   Pagination,
   Segmented,
   Space,
@@ -19,6 +20,7 @@ import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../ty
 import { STAGE_ORDER, seasonLabel, stageLabel } from '../utils/matchUtils';
 
 const { Text } = Typography;
+const { useBreakpoint } = Grid;
 
 // ─── competition metadata ─────────────────────────────────────────────────────
 
@@ -428,7 +430,7 @@ function WCGroupsView({ groups }: { groups: GroupStanding[] }) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(540px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 540px), 1fr))',
         gap: 16,
       }}
     >
@@ -471,6 +473,8 @@ export default function MatchesPage() {
   const [view, setView] = useState<'matches' | 'table'>('matches');
   const [limit, setLimit] = useState(10);
   const user = useUserStore((s) => s.user);
+  const screens = useBreakpoint();
+  const isMobile = screens.md === false;
 
   const {
     data: matchesPage,
@@ -556,7 +560,11 @@ export default function MatchesPage() {
 
   const competitionTabItems = COMPETITIONS.map((comp) => ({
     key: comp.code,
-    label: (
+    label: isMobile ? (
+      <Tag color={comp.tagColor} style={{ margin: 0 }}>
+        {comp.badge}
+      </Tag>
+    ) : (
       <Space size={6}>
         <Tag color={comp.tagColor} style={{ margin: 0 }}>
           {comp.badge}
@@ -574,30 +582,55 @@ export default function MatchesPage() {
         items={competitionTabItems}
         onChange={(key) => handleCompetition(key as CompCode)}
         tabBarExtraContent={
-          <Space wrap>
-            {!currentComp.hasStages && (
-              <Segmented
-                options={[
-                  { label: 'Matches', value: 'matches' },
-                  { label: 'Table', value: 'table' },
-                ]}
-                value={view}
-                onChange={(v) => setView(v as 'matches' | 'table')}
-              />
-            )}
-            {view === 'matches' && (
-              <Segmented
-                options={STATUS_SEGMENTS}
-                value={statusFilter ?? ''}
-                onChange={(v) => handleStatusFilter(v as string)}
-              />
-            )}
-          </Space>
+          isMobile ? undefined : (
+            <Space wrap>
+              {!currentComp.hasStages && (
+                <Segmented
+                  options={[
+                    { label: 'Matches', value: 'matches' },
+                    { label: 'Table', value: 'table' },
+                  ]}
+                  value={view}
+                  onChange={(v) => setView(v as 'matches' | 'table')}
+                />
+              )}
+              {view === 'matches' && (
+                <Segmented
+                  options={STATUS_SEGMENTS}
+                  value={statusFilter ?? ''}
+                  onChange={(v) => handleStatusFilter(v as string)}
+                />
+              )}
+            </Space>
+          )
         }
         renderTabBar={(props, DefaultTabBar) => (
-          <DefaultTabBar {...props} style={{ marginBottom: 16 }} />
+          <DefaultTabBar {...props} style={{ marginBottom: isMobile ? 8 : 16 }} />
         )}
       />
+
+      {/* Mobile view/status controls — rendered below tabs to avoid squeezing the tab bar */}
+      {isMobile && (
+        <Space wrap style={{ marginBottom: 16 }}>
+          {!currentComp.hasStages && (
+            <Segmented
+              options={[
+                { label: 'Matches', value: 'matches' },
+                { label: 'Table', value: 'table' },
+              ]}
+              value={view}
+              onChange={(v) => setView(v as 'matches' | 'table')}
+            />
+          )}
+          {view === 'matches' && (
+            <Segmented
+              options={STATUS_SEGMENTS}
+              value={statusFilter ?? ''}
+              onChange={(v) => handleStatusFilter(v as string)}
+            />
+          )}
+        </Space>
+      )}
 
       {/* Stage filter chips */}
       {view === 'matches' &&
@@ -683,9 +716,6 @@ export default function MatchesPage() {
                 current={page}
                 pageSize={limit}
                 total={total}
-                pageSizeOptions={[10, 20, 30]}
-                showSizeChanger
-                showTotal={(t) => `${t} matches`}
                 onChange={(p, ps) => {
                   setSearchParams((prev) => {
                     const next = new URLSearchParams(prev);
@@ -695,6 +725,13 @@ export default function MatchesPage() {
                   });
                   setLimit(ps);
                 }}
+                {...(isMobile
+                  ? { simple: true, size: 'small' as const }
+                  : {
+                      pageSizeOptions: [10, 20, 30],
+                      showSizeChanger: true,
+                      showTotal: (t: number) => `${t} matches`,
+                    })}
               />
             </div>
           )}
