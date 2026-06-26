@@ -42,7 +42,8 @@ export class MatchesController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/ai-preview')
-  getAiPreview(@Param('id', ParseIntPipe) id: number) {
-    return this.aiStatsService.getOrFetchPreview(id);
+  getAiPreview(@Param('id', ParseIntPipe) id: number, @Query('lang') lang?: string) {
+    const resolvedLang = lang === 'uk' ? 'uk' : 'en';
+    return this.aiStatsService.getOrFetchPreview(id, resolvedLang);
   }
 }

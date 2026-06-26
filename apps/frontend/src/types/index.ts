@@ -35,6 +35,11 @@ export interface AiMatchPreview {
   summary: string;
 }
 
+export interface AiPreviewStore {
+  en?: AiMatchPreview;
+  uk?: AiMatchPreview;
+}
+
 export interface Team {
   id: number;
   externalId: number;
@@ -73,7 +78,7 @@ export interface Match {
   halfTimeAway?: number | null;
   winner?: string | null;
   aiStats?: AiMatchStats | null;
-  aiPreview?: AiMatchPreview | null;
+  aiPreview?: AiMatchPreview | AiPreviewStore | null;
   competition: string;
   competitionCode: string;
   season: string;

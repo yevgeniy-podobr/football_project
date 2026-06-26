@@ -192,6 +192,8 @@
     "aiStatsShots": "Удари",
     "aiStatsShotsLabel": "в ціль / всього",
     "getAiPreview": "AI прев'ю",
+    "translateToEn": "Перекласти на англійську",
+    "translateToUk": "Перекласти на українську",
     "aiPreviewError": "Не вдалося завантажити прев'ю. Спробуйте ще раз.",
     "aiPreviewTitle": "AI прев'ю матчу",
     "aiPreviewForm": "Остання форма (5 ігор)",

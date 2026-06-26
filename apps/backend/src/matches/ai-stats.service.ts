@@ -36,6 +36,139 @@ export interface AiMatchPreview {
   summary: string;
 }
 
+export type Lang = 'en' | 'uk';
+
+// Per-language preview store — the shape persisted in Match.aiPreview going forward.
+// Legacy records (flat AiMatchPreview shape with a top-level "form" key) are treated as English.
+export interface AiPreviewStore {
+  en?: AiMatchPreview;
+  uk?: AiMatchPreview;
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+function isLegacyPreview(obj: unknown): boolean {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'form' in (obj as object) &&
+    !('en' in (obj as object)) &&
+    !('uk' in (obj as object))
+  );
+}
+
+function normalizePreviewStore(raw: unknown): AiPreviewStore {
+  if (raw === null || raw === undefined) return {};
+  if (isLegacyPreview(raw)) return { en: raw as AiMatchPreview };
+  return raw as AiPreviewStore;
+}
+
+async function fetchPreviewFromSearch(
+  homeTeamName: string,
+  awayTeamName: string,
+  competition: string,
+  season: string,
+  matchDate: Date,
+  lang: Lang,
+  ai: GoogleGenAI,
+): Promise<AiMatchPreview> {
+  const dateStr = matchDate.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+  const langInstruction =
+    lang === 'uk'
+      ? 'Write the keyPlayer notes, headToHead, and summary fields in Ukrainian. Player and team names must stay in their original form (do not translate names).'
+      : 'Write all text fields in English.';
+
+  const prompt = `You are a football analyst. Provide a pre-match preview for this upcoming match:
+
+${homeTeamName} (home) vs ${awayTeamName} (away)
+Competition: ${competition}
+Season: ${season}
+Scheduled: ${dateStr}
+
+Use Google Search to find current information. Return ONLY a valid JSON object — no markdown, no explanation — with this exact structure:
+{
+  "form": {
+    "home": "WWDLW",
+    "away": "LDWWL"
+  },
+  "keyPlayers": {
+    "home": [
+      { "name": "Player Name", "note": "Brief reason they are key (e.g. top scorer, captain)" }
+    ],
+    "away": [
+      { "name": "Player Name", "note": "Brief reason they are key" }
+    ]
+  },
+  "headToHead": "One sentence about recent H2H record if notable, or null if not significant",
+  "summary": "2-3 sentence match preview and prediction."
+}
+
+Rules:
+- "form" strings must be exactly 5 characters, each W, D, or L (most recent last). Use best available data.
+- "keyPlayers": 1-2 players per team only.
+- "headToHead": string or null.
+- "summary": concise, factual, 2-3 sentences max.
+- ${langInstruction}`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: { tools: [{ googleSearch: {} }] },
+  });
+
+  return parsePreviewFromText(response.text ?? '');
+}
+
+async function translatePreview(
+  source: AiMatchPreview,
+  targetLang: Lang,
+  ai: GoogleGenAI,
+): Promise<AiMatchPreview> {
+  const langName = targetLang === 'uk' ? 'Ukrainian' : 'English';
+  const prompt = `Translate this football match preview to ${langName}.
+
+Rules:
+- Keep the exact same JSON structure.
+- Translate ONLY these text fields: keyPlayers[].note, headToHead (if not null), summary.
+- Do NOT translate: form strings (W/D/L sequences), player names, team names.
+- Return ONLY valid JSON — no markdown, no explanation.
+
+${JSON.stringify(source, null, 2)}`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    // No googleSearch — pure translation, no grounding needed
+  });
+
+  return parsePreviewFromText(response.text ?? '');
+}
+
+function parsePreviewFromText(text: string): AiMatchPreview {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced ? fenced[1] : text;
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON object found in Gemini response');
+  return JSON.parse(raw.slice(start, end + 1)) as AiMatchPreview;
+}
+
+function parseJsonFromText(text: string): AiMatchStats {
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const raw = fenced ? fenced[1] : text;
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('No JSON object found in Gemini response');
+  return JSON.parse(raw.slice(start, end + 1)) as AiMatchStats;
+}
+
+// ─── service ──────────────────────────────────────────────────────────────────
+
 @Injectable()
 export class AiStatsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -106,7 +239,7 @@ Use the Google Search tool to find accurate data. If data for a field is unavail
     return stats;
   }
 
-  async getOrFetchPreview(matchId: number): Promise<AiMatchPreview> {
+  async getOrFetchPreview(matchId: number, lang: Lang = 'en'): Promise<AiMatchPreview> {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
       include: { homeTeam: true, awayTeam: true },
@@ -117,88 +250,44 @@ Use the Google Search tool to find accurate data. If data for a field is unavail
       throw new BadRequestException('AI Preview is only available for scheduled matches');
     }
 
-    if (match.aiPreview !== null) {
-      return match.aiPreview as unknown as AiMatchPreview;
-    }
+    const store = normalizePreviewStore(match.aiPreview);
+
+    // Return cached data for this language immediately
+    const cachedLang = store[lang];
+    if (cachedLang) return cachedLang;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
 
-    const matchDate = new Date(match.matchDate).toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-
-    const prompt = `You are a football analyst. Provide a pre-match preview for this upcoming match:
-
-${match.homeTeam.name} (home) vs ${match.awayTeam.name} (away)
-Competition: ${match.competition}
-Season: ${match.season}
-Scheduled: ${matchDate}
-
-Use Google Search to find current information. Return ONLY a valid JSON object — no markdown, no explanation — with this exact structure:
-{
-  "form": {
-    "home": "WWDLW",
-    "away": "LDWWL"
-  },
-  "keyPlayers": {
-    "home": [
-      { "name": "Player Name", "note": "Brief reason they are key (e.g. top scorer, captain)" }
-    ],
-    "away": [
-      { "name": "Player Name", "note": "Brief reason they are key" }
-    ]
-  },
-  "headToHead": "One sentence about recent H2H record if notable, or null if not significant",
-  "summary": "2-3 sentence match preview and prediction."
-}
-
-Rules:
-- "form" strings must be exactly 5 characters, each W, D, or L (most recent last). Use best available data.
-- "keyPlayers": 1-2 players per team only.
-- "headToHead": string or null.
-- "summary": concise, factual, 2-3 sentences max.`;
-
     const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: { tools: [{ googleSearch: {} }] },
-    });
+    const otherLang: Lang = lang === 'en' ? 'uk' : 'en';
+    const otherLangData = store[otherLang];
 
-    const text = response.text ?? '';
-    const preview = parsePreviewFromText(text);
+    let preview: AiMatchPreview;
 
+    if (otherLangData) {
+      // Translate from the other language (cheaper — no Google Search grounding needed)
+      preview = await translatePreview(otherLangData, lang, ai);
+    } else {
+      // Nothing cached — fetch fresh with Google Search grounding in the requested language
+      preview = await fetchPreviewFromSearch(
+        match.homeTeam.name,
+        match.awayTeam.name,
+        match.competition,
+        match.season,
+        new Date(match.matchDate),
+        lang,
+        ai,
+      );
+    }
+
+    // Merge the new language into the existing store and persist
+    const updatedStore: AiPreviewStore = { ...store, [lang]: preview };
     await this.prisma.match.update({
       where: { id: matchId },
-      data: { aiPreview: preview as unknown as Prisma.InputJsonValue },
+      data: { aiPreview: updatedStore as unknown as Prisma.InputJsonValue },
     });
 
     return preview;
   }
-}
-
-function parsePreviewFromText(text: string): AiMatchPreview {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = fenced ? fenced[1] : text;
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('No JSON object found in Gemini response');
-  return JSON.parse(raw.slice(start, end + 1)) as AiMatchPreview;
-}
-
-function parseJsonFromText(text: string): AiMatchStats {
-  // Strip markdown code fences if present
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = fenced ? fenced[1] : text;
-
-  // Find outermost JSON object
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('No JSON object found in Gemini response');
-
-  return JSON.parse(raw.slice(start, end + 1)) as AiMatchStats;
 }

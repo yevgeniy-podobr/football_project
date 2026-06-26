@@ -80,8 +80,10 @@ export const matchesApi = {
   sync: (force = false) =>
     api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
   getAiStats: (id: number) => api.post<AiMatchStats>(`/matches/${id}/ai-stats`).then((r) => r.data),
-  getAiPreview: (id: number) =>
-    api.post<AiMatchPreview>(`/matches/${id}/ai-preview`).then((r) => r.data),
+  getAiPreview: (id: number, lang: 'en' | 'uk' = 'en') =>
+    api
+      .post<AiMatchPreview>(`/matches/${id}/ai-preview`, undefined, { params: { lang } })
+      .then((r) => r.data),
 };
 
 export const predictionsApi = {

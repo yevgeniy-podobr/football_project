@@ -5,14 +5,40 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
-import type { AiMatchPreview, AiMatchStats } from '../types';
+import type { AiMatchPreview, AiMatchStats, AiPreviewStore } from '../types';
 import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+type Lang = 'en' | 'uk';
 type PredictedOutcome = 'HOME_WIN' | 'DRAW' | 'AWAY_WIN';
+
+function isPreviewStore(obj: AiMatchPreview | AiPreviewStore): obj is AiPreviewStore {
+  return !('form' in obj);
+}
+
+function getPreviewForLang(
+  aiPreview: AiMatchPreview | AiPreviewStore | null | undefined,
+  lang: Lang,
+): AiMatchPreview | null {
+  if (!aiPreview) return null;
+  if (isPreviewStore(aiPreview)) return aiPreview[lang] ?? null;
+  // Legacy flat shape — treat as English
+  return lang === 'en' ? aiPreview : null;
+}
+
+function hasPreviewForOtherLang(
+  aiPreview: AiMatchPreview | AiPreviewStore | null | undefined,
+  lang: Lang,
+): boolean {
+  if (!aiPreview) return false;
+  const other: Lang = lang === 'en' ? 'uk' : 'en';
+  if (isPreviewStore(aiPreview)) return aiPreview[other] != null;
+  // Legacy flat shape is English — so "other" lang (uk) isn't available
+  return lang === 'uk'; // legacy = en exists, current = uk → other (en) is there
+}
 
 function predictedOutcomeKey(home: number, away: number): PredictedOutcome {
   if (home > away) return 'HOME_WIN';
@@ -330,7 +356,8 @@ function AiPreviewCard({
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function MatchDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang: Lang = i18n.language.startsWith('uk') ? 'uk' : 'en';
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -382,7 +409,7 @@ export default function MatchDetailPage() {
   });
 
   const aiPreviewMutation = useMutation({
-    mutationFn: () => matchesApi.getAiPreview(matchId),
+    mutationFn: () => matchesApi.getAiPreview(matchId, currentLang),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['match', matchId] }),
   });
 
@@ -583,29 +610,43 @@ export default function MatchDetailPage() {
       )}
 
       {/* AI Preview */}
-      {isScheduled && match.aiPreview && (
-        <AiPreviewCard
-          preview={match.aiPreview}
-          homeTeamName={match.homeTeam.name}
-          awayTeamName={match.awayTeam.name}
-        />
-      )}
-      {isScheduled && !match.aiPreview && user && (
-        <div style={{ marginBottom: 24, textAlign: 'center' }}>
-          <Button
-            onClick={() => aiPreviewMutation.mutate()}
-            loading={aiPreviewMutation.isPending}
-            icon={<span>🔮</span>}
-          >
-            {t('matchDetail.getAiPreview')}
-          </Button>
-          {aiPreviewMutation.isError && (
-            <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-              {t('matchDetail.aiPreviewError')}
-            </Text>
-          )}
-        </div>
-      )}
+      {(() => {
+        const previewForLang = getPreviewForLang(match.aiPreview, currentLang);
+        const hasOtherLang = hasPreviewForOtherLang(match.aiPreview, currentLang);
+        return (
+          <>
+            {isScheduled && previewForLang && (
+              <AiPreviewCard
+                preview={previewForLang}
+                homeTeamName={match.homeTeam.name}
+                awayTeamName={match.awayTeam.name}
+              />
+            )}
+            {isScheduled && !previewForLang && user && (
+              <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                <Button
+                  onClick={() => aiPreviewMutation.mutate()}
+                  loading={aiPreviewMutation.isPending}
+                  icon={<span>{hasOtherLang ? '🌐' : '🔮'}</span>}
+                >
+                  {hasOtherLang
+                    ? t(
+                        currentLang === 'uk'
+                          ? 'matchDetail.translateToUk'
+                          : 'matchDetail.translateToEn',
+                      )
+                    : t('matchDetail.getAiPreview')}
+                </Button>
+                {aiPreviewMutation.isError && (
+                  <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+                    {t('matchDetail.aiPreviewError')}
+                  </Text>
+                )}
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* Prediction card */}
       <Card>

@@ -66,7 +66,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
 - AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats`; Gemini 2.5 Flash + Google Search grounding returns goals, cards, possession, shots; result persisted in `Match.aiStats` (fetched once, served from DB on subsequent loads)
-- AI Match Preview — on scheduled match detail page: "🔮 Get AI Preview" button calls `POST /matches/:id/ai-preview`; Gemini 2.5 Flash + Google Search grounding returns recent form (W/D/L badges), key players, H2H note, summary; persisted in `Match.aiPreview`; endpoint returns 400 if match is not SCHEDULED/TIMED
+- AI Match Preview — on scheduled match detail page: "🔮 Get AI Preview" button calls `POST /matches/:id/ai-preview?lang=en|uk`; multilingual — persists `{ en?, uk? }` store in `Match.aiPreview`; shows "🌐 Translate to Ukrainian/English" when only the other language is cached; Gemini 2.5 Flash + Google Search grounding for fresh fetch, translation-only call (no grounding) when translating from existing data; endpoint returns 400 if match is not SCHEDULED/TIMED
 
 ## i18n / Internationalization
 
@@ -94,8 +94,8 @@ Currently translated namespaces:
 | `profile` | ProfilePage — title, username/email read-only labels, first/last name form labels and placeholders, save button, success and fallback error messages |
 | `admin`   | AdminPage — page title, section headers, stat KPI labels, action card titles/descs/buttons, result messages (`resolveSuccess`/`syncedCount`/`syncSkipped` use `{{}}` interpolation), users table column headers, role/outcome badges, user detail panel labels |
 | `matches` | MatchesPage — view/status segment labels, stage filter header, stage names (nested `stages` object), status badge labels (nested `status` object), prediction result badges, standings legend labels, empty/error messages, pagination total (`totalMatches` with `{{count}}`); `emptyStage` uses `{{stage}}`; `stageMatchCount` uses `{{count}}`; API key missing empty message split into 3 keys (`emptyApiKeyPre/Mid/Post`) to preserve `<Text code>` elements |
-| `matchDetail` | MatchDetailPage — back link, match-not-found, HT label, prediction card (title, states, outcome badges, form buttons), predicted/actual outcome labels (nested `outcome` object keyed by `HOME_WIN/DRAW/AWAY_WIN`), AI Stats card (title + 4 section labels + shots sub-label), AI Preview card (title + 4 section labels); stage label reuses `matches.stages.*`; team/player names from API stay untranslated |
-| `predictions` | PredictionsPage — page title (`{{name}}` interpolation), KPI strip labels, pie chart title + slice names, "All predictions" section, empty state (3-part subtitle with link), status/date line reuses `matches.status.*`, outcome label reuses `matchDetail.outcome.*`, exact/correct/wrong badges reuse `matches.predExact/predCorrect/predWrong`, pending label, delete button. **Completes i18n rollout across all pages.** |
+| `matchDetail` | MatchDetailPage — back link, match-not-found, HT label, prediction card (title, states, outcome badges, form buttons), predicted/actual outcome labels (nested `outcome` object keyed by `HOME_WIN/DRAW/AWAY_WIN`), AI Stats card (title + 4 section labels + shots sub-label), AI Preview card (title + 4 section labels + `translateToEn`/`translateToUk` for translate button); stage label reuses `matches.stages.*`; team/player names from API stay untranslated |
+| `predictions` | PredictionsPage — page title (`{{name}}` interpolation), KPI strip labels, pie chart title + slice names, "All predictions" section, empty state (3-part subtitle with link), status/date line reuses `matches.status.*`, outcome label reuses `matchDetail.outcome.*`, exact/correct/wrong badges reuse `matches.predExact/predCorrect/predWrong`, pending label, delete button. Completes i18n rollout across all pages. |
 
 When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
 
@@ -136,12 +136,20 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `AiStatsService` lives in `src/matches/ai-stats.service.ts`; registered in `MatchesModule`; also handles `getOrFetchPreview` for AI Preview
 
 ## AI Preview
-- `POST /matches/:id/ai-preview` — requires `JwtAuthGuard`; returns 400 if match is not SCHEDULED/TIMED; returns cached `Match.aiPreview` if already populated; otherwise calls Gemini 2.5 Flash with Google Search grounding
-- Response shape: `{ form: { home, away }, keyPlayers: { home, away }, headToHead, summary }`
+- `POST /matches/:id/ai-preview?lang=en|uk` — requires `JwtAuthGuard`; returns 400 if match is not SCHEDULED/TIMED; `lang` defaults to `'en'`
+- **DB shape (new):** `Match.aiPreview` stores `{ en?: AiMatchPreview, uk?: AiMatchPreview }` — per-language store
+- **Backward compat:** legacy records with a flat `AiMatchPreview` shape (top-level `form` key) are treated as English on read
+- **Three-path logic in `AiStatsService.getOrFetchPreview(matchId, lang)`:**
+  1. `store[lang]` exists → return immediately (cached)
+  2. `store[otherLang]` exists → translate with Gemini (no Google Search grounding); merge into store and persist
+  3. Nothing cached → fresh fetch with Gemini + Google Search grounding using language instruction; merge and persist
+- **Translation path:** pure Gemini call (no grounding); translates `keyPlayers[].note`, `headToHead`, `summary`; preserves form strings, player/team names
+- **AiMatchPreview shape:** `{ form: { home, away }, keyPlayers: { home, away }, headToHead, summary }`
 - `form`: 5-char string of W/D/L (most recent last); rendered as colored badges on the frontend
 - `keyPlayers`: `{ name, note }[]` — 1–2 players per team
 - `headToHead`: string or null
 - `summary`: 2–3 sentence preview text
+- **Frontend:** detects current lang from `i18n.language` → `'uk'` prefix maps to `'uk'`, else `'en'`; `getPreviewForLang()` extracts the right language from the store; shows "🌐 Translate to Ukrainian/English" button when only the other language is cached, "🔮 Get AI Preview" when nothing is cached
 
 ## Prisma Models
 

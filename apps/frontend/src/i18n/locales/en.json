@@ -192,6 +192,8 @@
     "aiStatsShots": "Shots",
     "aiStatsShotsLabel": "on target / total",
     "getAiPreview": "Get AI Preview",
+    "translateToEn": "Translate to English",
+    "translateToUk": "Translate to Ukrainian",
     "aiPreviewError": "Failed to load preview. Try again.",
     "aiPreviewTitle": "AI Match Preview",
     "aiPreviewForm": "Recent Form (last 5)",
