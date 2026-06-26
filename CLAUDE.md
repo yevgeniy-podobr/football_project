@@ -94,6 +94,7 @@ Currently translated namespaces:
 | `profile` | ProfilePage — title, username/email read-only labels, first/last name form labels and placeholders, save button, success and fallback error messages |
 | `admin`   | AdminPage — page title, section headers, stat KPI labels, action card titles/descs/buttons, result messages (`resolveSuccess`/`syncedCount`/`syncSkipped` use `{{}}` interpolation), users table column headers, role/outcome badges, user detail panel labels |
 | `matches` | MatchesPage — view/status segment labels, stage filter header, stage names (nested `stages` object), status badge labels (nested `status` object), prediction result badges, standings legend labels, empty/error messages, pagination total (`totalMatches` with `{{count}}`); `emptyStage` uses `{{stage}}`; `stageMatchCount` uses `{{count}}`; API key missing empty message split into 3 keys (`emptyApiKeyPre/Mid/Post`) to preserve `<Text code>` elements |
+| `matchDetail` | MatchDetailPage — back link, match-not-found, HT label, prediction card (title, states, outcome badges, form buttons), predicted/actual outcome labels (nested `outcome` object keyed by `HOME_WIN/DRAW/AWAY_WIN`), AI Stats card (title + 4 section labels + shots sub-label), AI Preview card (title + 4 section labels); stage label reuses `matches.stages.*`; team/player names from API stay untranslated |
 
 When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
 

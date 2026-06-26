@@ -1,6 +1,7 @@
 import { LeftOutlined } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Form, InputNumber, Progress, Space, Spin, Tag, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
@@ -11,12 +12,12 @@ const { Text, Title } = Typography;
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-type DisplayOutcome = 'Home Win' | 'Draw' | 'Away Win';
+type PredictedOutcome = 'HOME_WIN' | 'DRAW' | 'AWAY_WIN';
 
-function displayOutcome(home: number, away: number): DisplayOutcome {
-  if (home > away) return 'Home Win';
-  if (home === away) return 'Draw';
-  return 'Away Win';
+function predictedOutcomeKey(home: number, away: number): PredictedOutcome {
+  if (home > away) return 'HOME_WIN';
+  if (home === away) return 'DRAW';
+  return 'AWAY_WIN';
 }
 
 function seasonLabel(season: string) {
@@ -58,18 +59,18 @@ function AiStatsCard({
   homeTeamName: string;
   awayTeamName: string;
 }) {
-  const { Text } = Typography;
+  const { t } = useTranslation();
 
   return (
     <Card style={{ marginBottom: 24 }} styles={{ body: { padding: '20px 24px' } }}>
       <Text style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 20 }}>
-        🤖 AI Match Statistics
+        🤖 {t('matchDetail.aiStatsTitle')}
       </Text>
 
       {/* Goals */}
       {(stats.goals.home.length > 0 || stats.goals.away.length > 0) && (
         <div style={{ marginBottom: 20 }}>
-          <Text style={LABEL_STYLE}>Goals</Text>
+          <Text style={LABEL_STYLE}>{t('matchDetail.aiStatsGoals')}</Text>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               {stats.goals.home.map((g) => (
@@ -108,7 +109,7 @@ function AiStatsCard({
       {/* Cards */}
       {(stats.cards.home.length > 0 || stats.cards.away.length > 0) && (
         <div style={{ marginBottom: 20 }}>
-          <Text style={LABEL_STYLE}>Cards</Text>
+          <Text style={LABEL_STYLE}>{t('matchDetail.aiStatsCards')}</Text>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               {stats.cards.home.map((c) => (
@@ -149,7 +150,7 @@ function AiStatsCard({
       {/* Possession */}
       {(stats.possession.home > 0 || stats.possession.away > 0) && (
         <div style={{ marginBottom: 20 }}>
-          <Text style={LABEL_STYLE}>Possession</Text>
+          <Text style={LABEL_STYLE}>{t('matchDetail.aiStatsPossession')}</Text>
           <div
             style={{
               display: 'flex',
@@ -183,7 +184,7 @@ function AiStatsCard({
       {/* Shots */}
       {(stats.shots.home.total > 0 || stats.shots.away.total > 0) && (
         <div>
-          <Text style={LABEL_STYLE}>Shots</Text>
+          <Text style={LABEL_STYLE}>{t('matchDetail.aiStatsShots')}</Text>
           <div
             style={{
               display: 'grid',
@@ -199,7 +200,7 @@ function AiStatsCard({
               </Text>
             </Text>
             <Text type="secondary" style={{ fontSize: 11, textAlign: 'center' }}>
-              on target / total
+              {t('matchDetail.aiStatsShotsLabel')}
             </Text>
             <Text style={{ fontSize: 14, fontWeight: 600, textAlign: 'right' }}>
               {stats.shots.away.onTarget}
@@ -253,15 +254,17 @@ function AiPreviewCard({
   homeTeamName: string;
   awayTeamName: string;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Card style={{ marginBottom: 24 }} styles={{ body: { padding: '20px 24px' } }}>
       <Text style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 20 }}>
-        🔮 AI Match Preview
+        🔮 {t('matchDetail.aiPreviewTitle')}
       </Text>
 
       {/* Form */}
       <div style={{ marginBottom: 20 }}>
-        <Text style={LABEL_STYLE}>Recent Form (last 5)</Text>
+        <Text style={LABEL_STYLE}>{t('matchDetail.aiPreviewForm')}</Text>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 6 }}>
@@ -282,7 +285,7 @@ function AiPreviewCard({
 
       {/* Key players */}
       <div style={{ marginBottom: 20 }}>
-        <Text style={LABEL_STYLE}>Key Players</Text>
+        <Text style={LABEL_STYLE}>{t('matchDetail.aiPreviewKeyPlayers')}</Text>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             {preview.keyPlayers.home.map((p) => (
@@ -310,14 +313,14 @@ function AiPreviewCard({
       {/* Head to head */}
       {preview.headToHead && (
         <div style={{ marginBottom: 20 }}>
-          <Text style={LABEL_STYLE}>Head to Head</Text>
+          <Text style={LABEL_STYLE}>{t('matchDetail.aiPreviewH2H')}</Text>
           <Text style={{ fontSize: 13 }}>{preview.headToHead}</Text>
         </div>
       )}
 
       {/* Summary */}
       <div>
-        <Text style={LABEL_STYLE}>Preview</Text>
+        <Text style={LABEL_STYLE}>{t('matchDetail.aiPreviewSummary')}</Text>
         <Text style={{ fontSize: 13, lineHeight: 1.6 }}>{preview.summary}</Text>
       </div>
     </Card>
@@ -327,6 +330,7 @@ function AiPreviewCard({
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function MatchDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -394,7 +398,7 @@ export default function MatchDetailPage() {
   if (!match) {
     return (
       <div style={{ textAlign: 'center', padding: '64px 0' }}>
-        <Text type="danger">Match not found</Text>
+        <Text type="danger">{t('matchDetail.matchNotFound')}</Text>
       </div>
     );
   }
@@ -406,12 +410,8 @@ export default function MatchDetailPage() {
 
   const isCorrect =
     prediction?.outcome != null
-      ? displayOutcome(prediction.predictedHome, prediction.predictedAway) ===
-        (prediction.outcome === 'HOME_WIN'
-          ? 'Home Win'
-          : prediction.outcome === 'DRAW'
-            ? 'Draw'
-            : 'Away Win')
+      ? predictedOutcomeKey(prediction.predictedHome, prediction.predictedAway) ===
+        prediction.outcome
       : null;
 
   const handleFinish = (values: { home: number; away: number }) => {
@@ -452,7 +452,7 @@ export default function MatchDetailPage() {
         }}
         style={{ marginBottom: 24, paddingLeft: 0, color: 'rgba(255,255,255,0.45)' }}
       >
-        Back to matches
+        {t('matchDetail.backToMatches')}
       </Button>
 
       {/* Match card */}
@@ -464,7 +464,13 @@ export default function MatchDetailPage() {
             <Text type="secondary" style={{ fontSize: 13 }}>
               {match.competition} {seasonLabel(match.season)}
               {match.stage && match.stage !== 'REGULAR_SEASON' && (
-                <> · {match.stage.replace(/_/g, ' ')}</>
+                <>
+                  {' '}
+                  ·{' '}
+                  {t(`matches.stages.${match.stage}`, {
+                    defaultValue: match.stage.replace(/_/g, ' '),
+                  })}
+                </>
               )}
             </Text>
           </Space>
@@ -514,7 +520,7 @@ export default function MatchDetailPage() {
                 </Text>
                 {match.halfTimeHome != null && (
                   <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                    HT {match.halfTimeHome} – {match.halfTimeAway}
+                    {t('matchDetail.halfTime')} {match.halfTimeHome} – {match.halfTimeAway}
                   </Text>
                 )}
               </>
@@ -566,11 +572,11 @@ export default function MatchDetailPage() {
             loading={aiStatsMutation.isPending}
             icon={<span>🤖</span>}
           >
-            Get AI Stats
+            {t('matchDetail.getAiStats')}
           </Button>
           {aiStatsMutation.isError && (
             <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-              Failed to load stats. Try again.
+              {t('matchDetail.aiStatsError')}
             </Text>
           )}
         </div>
@@ -591,11 +597,11 @@ export default function MatchDetailPage() {
             loading={aiPreviewMutation.isPending}
             icon={<span>🔮</span>}
           >
-            Get AI Preview
+            {t('matchDetail.getAiPreview')}
           </Button>
           {aiPreviewMutation.isError && (
             <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-              Failed to load preview. Try again.
+              {t('matchDetail.aiPreviewError')}
             </Text>
           )}
         </div>
@@ -604,10 +610,10 @@ export default function MatchDetailPage() {
       {/* Prediction card */}
       <Card>
         <Title level={5} style={{ marginTop: 0 }}>
-          Your Prediction
+          {t('matchDetail.yourPrediction')}
         </Title>
 
-        {!user && <Text type="secondary">Sign in via the navbar to make a prediction.</Text>}
+        {!user && <Text type="secondary">{t('matchDetail.signInToPredict')}</Text>}
 
         {user && prediction && (
           <div style={{ marginBottom: 20 }}>
@@ -631,7 +637,9 @@ export default function MatchDetailPage() {
                 {prediction.predictedHome} – {prediction.predictedAway}
               </Text>
               <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
-                {displayOutcome(prediction.predictedHome, prediction.predictedAway)}
+                {t(
+                  `matchDetail.outcome.${predictedOutcomeKey(prediction.predictedHome, prediction.predictedAway)}`,
+                )}
               </Text>
               {isCorrect !== null && (
                 <Text
@@ -643,15 +651,15 @@ export default function MatchDetailPage() {
                   }}
                 >
                   {prediction.isExactScore
-                    ? '★ Exact score!'
+                    ? t('matchDetail.predExactScore')
                     : isCorrect
-                      ? '✓ Correct outcome'
-                      : '✗ Incorrect'}
+                      ? t('matchDetail.predCorrectOutcome')
+                      : t('matchDetail.predIncorrect')}
                 </Text>
               )}
               {isCorrect === null && (
                 <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                  Awaiting result
+                  {t('matchDetail.awaitingResult')}
                 </Text>
               )}
             </div>
@@ -665,7 +673,7 @@ export default function MatchDetailPage() {
                 loading={deleteMutation.isPending}
                 style={{ marginTop: 12 }}
               >
-                Delete prediction
+                {t('matchDetail.deletePrediction')}
               </Button>
             )}
           </div>
@@ -673,12 +681,12 @@ export default function MatchDetailPage() {
 
         {user && !prediction && !isFinished && (
           <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-            No prediction yet for this match.
+            {t('matchDetail.noPredictionYet')}
           </Text>
         )}
 
         {user && !prediction && isFinished && (
-          <Text type="secondary">This match is finished — predictions are closed.</Text>
+          <Text type="secondary">{t('matchDetail.predictionsClosed')}</Text>
         )}
 
         {user && !isFinished && (
@@ -728,9 +736,9 @@ export default function MatchDetailPage() {
                 if (h != null && a != null) {
                   return (
                     <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
-                      Predicted outcome:{' '}
+                      {t('matchDetail.predictedOutcome')}{' '}
                       <Text strong style={{ color: 'inherit' }}>
-                        {displayOutcome(h, a)}
+                        {t(`matchDetail.outcome.${predictedOutcomeKey(h, a)}`)}
                       </Text>
                     </Text>
                   );
@@ -747,7 +755,7 @@ export default function MatchDetailPage() {
               size="large"
               disabled={aiStatsMutation.isPending || aiPreviewMutation.isPending}
             >
-              {prediction ? 'Update Prediction' : 'Save Prediction'}
+              {prediction ? t('matchDetail.updatePrediction') : t('matchDetail.savePrediction')}
             </Button>
           </Form>
         )}
