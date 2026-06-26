@@ -4,7 +4,7 @@
 A fullstack football app with match data, standings, and predictions tracking with accuracy stats.
 
 ## Stack
-- **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons + Zustand (global auth state)
+- **Frontend:** React + TypeScript + Vite + React Query + Recharts + Ant Design (antd) + @ant-design/icons + Zustand (global auth state) + i18next + react-i18next + i18next-browser-languagedetector
 - **Backend:** NestJS + TypeScript
 - **Database:** PostgreSQL + Prisma
 - **Cache:** Redis (ioredis + cache-manager-ioredis-yet via @nestjs/cache-manager)
@@ -67,6 +67,31 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
 - AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats`; Gemini 2.5 Flash + Google Search grounding returns goals, cards, possession, shots; result persisted in `Match.aiStats` (fetched once, served from DB on subsequent loads)
 - AI Match Preview — on scheduled match detail page: "🔮 Get AI Preview" button calls `POST /matches/:id/ai-preview`; Gemini 2.5 Flash + Google Search grounding returns recent form (W/D/L badges), key players, H2H note, summary; persisted in `Match.aiPreview`; endpoint returns 400 if match is not SCHEDULED/TIMED
+
+## i18n / Internationalization
+
+- **Libraries:** i18next + react-i18next + i18next-browser-languagedetector
+- **Languages:** English (`en`, default) and Ukrainian (`uk`)
+- **Config:** `apps/frontend/src/i18n/index.ts` — initializes i18next with inline resources, LanguageDetector (localStorage first, then browser), fallbackLng `en`
+- **Locale files:** `apps/frontend/src/i18n/locales/en.json` and `uk.json`
+- **Init:** imported in `apps/frontend/src/main.tsx` before App renders (`import './i18n'`)
+- **Language persistence:** stored in `localStorage` under key `i18n-lang`
+- **Language switcher:** `Segmented` control ("EN" / "UA") in Navbar desktop layout; dropdown items ("EN — English" / "UA — Українська" with checkmark) in mobile avatar dropdown
+
+### Translation key convention
+
+Keys are **flat nested under a namespace** within a single translation file — no separate namespace files.
+
+Pattern: `namespace.camelCaseKey`
+
+Example usage: `const { t } = useTranslation(); t('navbar.signOut')`
+
+Currently translated namespaces:
+| Namespace | Coverage |
+|-----------|----------|
+| `navbar`  | All Navbar labels (brand, nav items, user menu, auth buttons, admin badge) |
+
+When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
 
 ## Auth
 All endpoints and frontend pages are fully implemented and wired up.

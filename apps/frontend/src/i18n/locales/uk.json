@@ -1,0 +1,16 @@
+{
+  "navbar": {
+    "brand": "Футбольний прогнозист",
+    "brandMobile": "ФП",
+    "matches": "Матчі",
+    "predictions": "Прогнози",
+    "admin": "Адмін",
+    "adminBadge": "Адмін",
+    "profile": "Профіль",
+    "signOut": "Вийти",
+    "register": "Реєстрація",
+    "signIn": "Увійти",
+    "langEn": "EN",
+    "langUk": "UA"
+  }
+}

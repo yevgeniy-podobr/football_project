@@ -1,0 +1,16 @@
+{
+  "navbar": {
+    "brand": "Football Predictor",
+    "brandMobile": "FP",
+    "matches": "Matches",
+    "predictions": "Predictions",
+    "admin": "Admin",
+    "adminBadge": "Admin",
+    "profile": "Profile",
+    "signOut": "Sign out",
+    "register": "Register",
+    "signIn": "Sign in",
+    "langEn": "EN",
+    "langUk": "UA"
+  }
+}

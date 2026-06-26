@@ -7,10 +7,12 @@ import {
   Layout,
   Menu,
   type MenuProps,
+  Segmented,
   Space,
   Tag,
   Typography,
 } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from '../store/userStore';
 
@@ -25,11 +27,15 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const screens = useBreakpoint();
   const isMobile = screens.md === false;
+  const { t, i18n } = useTranslation();
+
+  const currentLang = i18n.language.startsWith('uk') ? 'UA' : 'EN';
+  const handleLangChange = (val: string) => i18n.changeLanguage(val === 'UA' ? 'uk' : 'en');
 
   const navItems = [
-    { key: '/', label: 'Matches' },
-    { key: '/predictions', label: 'Predictions' },
-    ...(user?.role === 'ADMIN' ? [{ key: '/admin', label: 'Admin' }] : []),
+    { key: '/', label: t('navbar.matches') },
+    { key: '/predictions', label: t('navbar.predictions') },
+    ...(user?.role === 'ADMIN' ? [{ key: '/admin', label: t('navbar.admin') }] : []),
   ];
 
   const selectedKey = (() => {
@@ -50,6 +56,20 @@ export default function Navbar() {
     ? (user.firstName?.[0] ?? user.username?.[0] ?? user.email?.[0] ?? '?').toUpperCase()
     : undefined;
 
+  const langMenuItems: MenuProps['items'] = [
+    { type: 'divider' },
+    {
+      key: 'lang-en',
+      label: `${currentLang === 'EN' ? '✓ ' : ''}EN — English`,
+      onClick: () => handleLangChange('EN'),
+    },
+    {
+      key: 'lang-uk',
+      label: `${currentLang === 'UA' ? '✓ ' : ''}UA — Українська`,
+      onClick: () => handleLangChange('UA'),
+    },
+  ];
+
   const dropdownItems: MenuProps['items'] = user
     ? [
         {
@@ -59,7 +79,7 @@ export default function Navbar() {
               <div style={{ fontSize: 13 }}>{userDisplayName}</div>
               {user.role === 'ADMIN' && (
                 <Tag color="orange" style={{ margin: '4px 0 0', display: 'inline-block' }}>
-                  Admin
+                  {t('navbar.adminBadge')}
                 </Tag>
               )}
             </div>
@@ -67,12 +87,14 @@ export default function Navbar() {
           disabled: true,
         },
         { type: 'divider' },
-        { key: 'profile', label: 'Profile', onClick: () => navigate('/profile') },
-        { key: 'signout', label: 'Sign out', onClick: logout },
+        { key: 'profile', label: t('navbar.profile'), onClick: () => navigate('/profile') },
+        { key: 'signout', label: t('navbar.signOut'), onClick: logout },
+        ...langMenuItems,
       ]
     : [
-        { key: 'register', label: 'Register', onClick: () => navigate('/register') },
-        { key: 'login', label: 'Sign in', onClick: () => navigate('/login') },
+        { key: 'register', label: t('navbar.register'), onClick: () => navigate('/register') },
+        { key: 'login', label: t('navbar.signIn'), onClick: () => navigate('/login') },
+        ...langMenuItems,
       ];
 
   return (
@@ -97,7 +119,7 @@ export default function Navbar() {
           flexShrink: 0,
         }}
       >
-        {isMobile ? 'FP' : 'Football Predictor'}
+        {isMobile ? t('navbar.brandMobile') : t('navbar.brand')}
       </Text>
 
       <Menu
@@ -123,6 +145,12 @@ export default function Navbar() {
         </Dropdown>
       ) : (
         <Space style={{ flexShrink: 0 }}>
+          <Segmented
+            size="small"
+            options={['EN', 'UA']}
+            value={currentLang}
+            onChange={(val) => handleLangChange(val as string)}
+          />
           {user ? (
             <>
               <Text type="secondary" style={{ fontSize: 13 }}>
@@ -130,14 +158,14 @@ export default function Navbar() {
               </Text>
               {user.role === 'ADMIN' && (
                 <Tag color="orange" style={{ margin: 0 }}>
-                  Admin
+                  {t('navbar.adminBadge')}
                 </Tag>
               )}
               <Button size="small" onClick={() => navigate('/profile')}>
-                Profile
+                {t('navbar.profile')}
               </Button>
               <Button size="small" onClick={logout}>
-                Sign out
+                {t('navbar.signOut')}
               </Button>
             </>
           ) : (
@@ -147,14 +175,14 @@ export default function Navbar() {
                 type={pathname === '/register' ? 'primary' : 'default'}
                 onClick={() => navigate('/register')}
               >
-                Register
+                {t('navbar.register')}
               </Button>
               <Button
                 size="small"
                 type={pathname === '/login' ? 'primary' : 'default'}
                 onClick={() => navigate('/login')}
               >
-                Sign in
+                {t('navbar.signIn')}
               </Button>
             </>
           )}
