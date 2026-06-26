@@ -13,7 +13,7 @@ import {
   Typography,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { adminApi, matchesApi, predictionsApi } from '../api/client';
 import type { AdminUserDetail, AdminUserRow, Outcome } from '../types';
@@ -206,55 +206,68 @@ function UsersTable({
 }) {
   const { t } = useTranslation();
 
-  const columns: ColumnsType<AdminUserRow> = [
-    {
-      title: t('admin.colUser'),
-      key: 'user',
-      render: (_, u) => (
-        <Text strong>
-          {u.username ?? (
-            <Text type="secondary" style={{ fontStyle: 'italic' }}>
-              {t('admin.noUsername')}
-            </Text>
-          )}
-        </Text>
-      ),
-    },
-    {
-      title: t('admin.colEmail'),
-      dataIndex: 'email',
-      responsive: ['sm'],
-      render: (email: string) => <Text type="secondary">{email}</Text>,
-    },
-    {
-      title: t('admin.colRole'),
-      key: 'role',
-      align: 'center',
-      render: (_, u) => <RoleBadge role={u.role} />,
-    },
-    {
-      title: t('admin.colPredictions'),
-      dataIndex: 'predictionCount',
-      align: 'center',
-    },
-    {
-      title: t('admin.colAccuracy'),
-      key: 'accuracy',
-      align: 'center',
-      render: (_, u) =>
-        u.accuracy !== null ? (
-          <Text style={{ color: '#60a5fa', fontWeight: 500 }}>{u.accuracy}%</Text>
-        ) : (
-          <Text type="secondary">—</Text>
+  const columns = useMemo<ColumnsType<AdminUserRow>>(
+    () => [
+      {
+        title: t('admin.colUser'),
+        key: 'user',
+        width: 120,
+        render: (_, u) => (
+          <Text strong style={{ whiteSpace: 'nowrap' }}>
+            {u.username ?? (
+              <Text type="secondary" style={{ fontStyle: 'italic' }}>
+                {t('admin.noUsername')}
+              </Text>
+            )}
+          </Text>
         ),
-    },
-    {
-      title: t('admin.colRegistered'),
-      dataIndex: 'createdAt',
-      responsive: ['md'],
-      render: (date: string) => <Text type="secondary">{fmtDate(date)}</Text>,
-    },
-  ];
+      },
+      {
+        title: t('admin.colEmail'),
+        key: 'email',
+        dataIndex: 'email',
+        width: 180,
+        responsive: ['sm'],
+        render: (email: string) => <Text type="secondary">{email}</Text>,
+      },
+      {
+        title: t('admin.colRole'),
+        key: 'role',
+        width: 72,
+        align: 'center',
+        render: (_, u) => <RoleBadge role={u.role} />,
+      },
+      {
+        title: t('admin.colPredictions'),
+        key: 'predictionCount',
+        dataIndex: 'predictionCount',
+        width: 90,
+        align: 'center',
+        responsive: ['sm'],
+      },
+      {
+        title: t('admin.colAccuracy'),
+        key: 'accuracy',
+        width: 80,
+        align: 'center',
+        render: (_, u) =>
+          u.accuracy !== null ? (
+            <Text style={{ color: '#60a5fa', fontWeight: 500 }}>{u.accuracy}%</Text>
+          ) : (
+            <Text type="secondary">—</Text>
+          ),
+      },
+      {
+        title: t('admin.colRegistered'),
+        key: 'createdAt',
+        dataIndex: 'createdAt',
+        width: 120,
+        responsive: ['md'],
+        render: (date: string) => <Text type="secondary">{fmtDate(date)}</Text>,
+      },
+    ],
+    [t],
+  );
 
   return (
     <Table
@@ -262,6 +275,7 @@ function UsersTable({
       dataSource={users}
       rowKey="id"
       pagination={false}
+      scroll={{ x: 'max-content' }}
       expandable={{
         expandedRowRender: (u) => <UserDetailPanel userId={u.id} />,
         expandedRowKeys: selectedId ? [selectedId] : [],
