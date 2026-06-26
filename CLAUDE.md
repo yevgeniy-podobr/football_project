@@ -92,6 +92,7 @@ Currently translated namespaces:
 | `navbar`  | All Navbar labels (brand, nav items, user menu, auth buttons, admin badge) |
 | `auth`    | LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage — titles, subtitles, field labels, validation messages, buttons, links, fallback error strings; `checkEmailBody` uses `{{email}}` interpolation |
 | `profile` | ProfilePage — title, username/email read-only labels, first/last name form labels and placeholders, save button, success and fallback error messages |
+| `admin`   | AdminPage — page title, section headers, stat KPI labels, action card titles/descs/buttons, result messages (`resolveSuccess`/`syncedCount`/`syncSkipped` use `{{}}` interpolation), users table column headers, role/outcome badges, user detail panel labels |
 
 When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
 

@@ -14,6 +14,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi, matchesApi, predictionsApi } from '../api/client';
 import type { AdminUserDetail, AdminUserRow, Outcome } from '../types';
 import { CompBadge } from './MatchesPage';
@@ -39,23 +40,30 @@ function fmtDate(iso: string) {
 // ─── small shared components ──────────────────────────────────────────────────
 
 function RoleBadge({ role }: { role: AdminUserRow['role'] }) {
-  if (role === 'ADMIN') return <Tag color="orange">Admin</Tag>;
-  return <Text type="secondary">User</Text>;
+  const { t } = useTranslation();
+  if (role === 'ADMIN') return <Tag color="orange">{t('admin.roleAdmin')}</Tag>;
+  return <Text type="secondary">{t('admin.roleUser')}</Text>;
 }
 
 function OutcomeBadge({ p }: { p: AdminUserDetail['predictions'][number] }) {
-  if (p.isExactScore) return <Tag color="gold">Exact</Tag>;
+  const { t } = useTranslation();
+  if (p.isExactScore) return <Tag color="gold">{t('admin.badgeExact')}</Tag>;
   if (p.outcome !== null) {
     const predicted = predictedOutcome(p.predictedHome, p.predictedAway);
     const correct = predicted === p.outcome;
-    return correct ? <Tag color="blue">Correct</Tag> : <Tag color="error">Wrong</Tag>;
+    return correct ? (
+      <Tag color="blue">{t('admin.badgeCorrect')}</Tag>
+    ) : (
+      <Tag color="error">{t('admin.badgeWrong')}</Tag>
+    );
   }
-  return <Tag>Pending</Tag>;
+  return <Tag>{t('admin.badgePending')}</Tag>;
 }
 
 // ─── user detail panel ────────────────────────────────────────────────────────
 
 function UserDetailPanel({ userId }: { userId: number }) {
+  const { t } = useTranslation();
   const { data, isLoading, isError } = useQuery({
     queryKey: ['admin-user', userId],
     queryFn: () => adminApi.getUserDetail(userId),
@@ -71,17 +79,17 @@ function UserDetailPanel({ userId }: { userId: number }) {
   if (isError || !data) {
     return (
       <Text type="danger" style={{ display: 'block', padding: '16px 0' }}>
-        Failed to load user.
+        {t('admin.loadUserFailed')}
       </Text>
     );
   }
 
   const statItems = data.stats
     ? [
-        { label: 'Total', value: data.stats.total, color: undefined },
-        { label: 'Correct', value: data.stats.correct, color: '#4ade80' },
-        { label: 'Exact', value: data.stats.exactScores, color: '#facc15' },
-        { label: 'Accuracy', value: `${data.stats.accuracy}%`, color: '#60a5fa' },
+        { label: t('admin.statTotal'), value: data.stats.total, color: undefined },
+        { label: t('admin.statCorrect'), value: data.stats.correct, color: '#4ade80' },
+        { label: t('admin.statExact'), value: data.stats.exactScores, color: '#facc15' },
+        { label: t('admin.statAccuracy'), value: `${data.stats.accuracy}%`, color: '#60a5fa' },
       ]
     : [];
 
@@ -93,7 +101,7 @@ function UserDetailPanel({ userId }: { userId: number }) {
         <Text type="secondary">{data.email}</Text>
         <RoleBadge role={data.role} />
         <Text type="secondary" style={{ fontSize: 12 }}>
-          Registered {fmtDate(data.createdAt)}
+          {t('admin.registeredOn', { date: fmtDate(data.createdAt) })}
         </Text>
       </Space>
 
@@ -114,13 +122,13 @@ function UserDetailPanel({ userId }: { userId: number }) {
         </Row>
       ) : (
         <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-          No prediction stats yet.
+          {t('admin.noStats')}
         </Text>
       )}
 
       {/* Predictions list */}
       {data.predictions.length === 0 ? (
-        <Text type="secondary">No predictions yet.</Text>
+        <Text type="secondary">{t('admin.noPredictions')}</Text>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {data.predictions.map((p) => {
@@ -170,7 +178,7 @@ function UserDetailPanel({ userId }: { userId: number }) {
                     style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}
                   >
                     <Text type="secondary" style={{ fontSize: 11, marginRight: 4 }}>
-                      actual
+                      {t('admin.actualScore')}
                     </Text>
                     {p.match.homeScore}–{p.match.awayScore}
                   </Text>
@@ -196,39 +204,41 @@ function UsersTable({
   selectedId: number | null;
   onSelect: (id: number) => void;
 }) {
+  const { t } = useTranslation();
+
   const columns: ColumnsType<AdminUserRow> = [
     {
-      title: 'User',
+      title: t('admin.colUser'),
       key: 'user',
       render: (_, u) => (
         <Text strong>
           {u.username ?? (
             <Text type="secondary" style={{ fontStyle: 'italic' }}>
-              no username
+              {t('admin.noUsername')}
             </Text>
           )}
         </Text>
       ),
     },
     {
-      title: 'Email',
+      title: t('admin.colEmail'),
       dataIndex: 'email',
       responsive: ['sm'],
       render: (email: string) => <Text type="secondary">{email}</Text>,
     },
     {
-      title: 'Role',
+      title: t('admin.colRole'),
       key: 'role',
       align: 'center',
       render: (_, u) => <RoleBadge role={u.role} />,
     },
     {
-      title: 'Predictions',
+      title: t('admin.colPredictions'),
       dataIndex: 'predictionCount',
       align: 'center',
     },
     {
-      title: 'Accuracy',
+      title: t('admin.colAccuracy'),
       key: 'accuracy',
       align: 'center',
       render: (_, u) =>
@@ -239,7 +249,7 @@ function UsersTable({
         ),
     },
     {
-      title: 'Registered',
+      title: t('admin.colRegistered'),
       dataIndex: 'createdAt',
       responsive: ['md'],
       render: (date: string) => <Text type="secondary">{fmtDate(date)}</Text>,
@@ -269,6 +279,7 @@ type ActionResult =
   | { type: 'sync'; synced: boolean; count?: number; reason?: string };
 
 export default function AdminPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
@@ -314,39 +325,43 @@ export default function AdminPage() {
         hour: '2-digit',
         minute: '2-digit',
       })
-    : 'Never';
+    : t('admin.neverSynced');
+
+  const sectionLabel = (text: string) => (
+    <Text
+      type="secondary"
+      style={{
+        fontSize: 11,
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        display: 'block',
+        marginBottom: 16,
+      }}
+    >
+      {text}
+    </Text>
+  );
 
   return (
     <div
       style={{ maxWidth: 896, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 32 }}
     >
       <Title level={3} style={{ margin: 0 }}>
-        Admin Panel
+        {t('admin.title')}
       </Title>
 
       {/* Database Overview */}
       <section>
-        <Text
-          type="secondary"
-          style={{
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            display: 'block',
-            marginBottom: 16,
-          }}
-        >
-          Database Overview
-        </Text>
+        {sectionLabel(t('admin.sectionOverview'))}
         {statsLoading ? (
           <Spin />
         ) : (
           <Row gutter={[16, 16]}>
             {[
-              { label: 'Users', value: stats?.users ?? 0 },
-              { label: 'Predictions', value: stats?.predictions ?? 0 },
-              { label: 'Matches', value: stats?.matches ?? 0 },
-              { label: 'Last Sync', value: lastSync },
+              { label: t('admin.statUsers'), value: stats?.users ?? 0 },
+              { label: t('admin.statPredictions'), value: stats?.predictions ?? 0 },
+              { label: t('admin.statMatches'), value: stats?.matches ?? 0 },
+              { label: t('admin.statLastSync'), value: lastSync },
             ].map((s) => (
               <Col xs={12} sm={6} key={s.label}>
                 <Card>
@@ -360,18 +375,7 @@ export default function AdminPage() {
 
       {/* Actions */}
       <section>
-        <Text
-          type="secondary"
-          style={{
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            display: 'block',
-            marginBottom: 16,
-          }}
-        >
-          Actions
-        </Text>
+        {sectionLabel(t('admin.sectionActions'))}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* Resolve All */}
@@ -387,11 +391,10 @@ export default function AdminPage() {
             >
               <div>
                 <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                  Resolve All Predictions
+                  {t('admin.resolveTitle')}
                 </Text>
                 <Text type="secondary" style={{ fontSize: 13 }}>
-                  Score all pending predictions for finished matches and update user stats. The cron
-                  job does this automatically every 5 minutes.
+                  {t('admin.resolveDesc')}
                 </Text>
               </div>
               <Button
@@ -400,7 +403,7 @@ export default function AdminPage() {
                 loading={resolveMutation.isPending}
                 style={{ flexShrink: 0 }}
               >
-                Resolve All
+                {t('admin.resolveBtn')}
               </Button>
             </div>
             {resolveMutation.isSuccess && resolveMutation.data.type === 'resolve' && (
@@ -409,17 +412,16 @@ export default function AdminPage() {
                 type="success"
                 message={
                   resolveMutation.data.resolved === 0
-                    ? 'Nothing to resolve — all predictions are up to date.'
-                    : `Resolved ${resolveMutation.data.resolved} prediction(s) for ${resolveMutation.data.affectedUsers.length} user(s).`
+                    ? t('admin.resolveNone')
+                    : t('admin.resolveSuccess', {
+                        predictions: resolveMutation.data.resolved,
+                        users: resolveMutation.data.affectedUsers.length,
+                      })
                 }
               />
             )}
             {resolveMutation.isError && (
-              <Alert
-                style={{ marginTop: 16 }}
-                type="error"
-                message="Failed to resolve predictions."
-              />
+              <Alert style={{ marginTop: 16 }} type="error" message={t('admin.resolveFailed')} />
             )}
           </Card>
 
@@ -436,11 +438,10 @@ export default function AdminPage() {
             >
               <div>
                 <Text strong style={{ display: 'block', marginBottom: 4 }}>
-                  Force Sync Matches
+                  {t('admin.syncTitle')}
                 </Text>
                 <Text type="secondary" style={{ fontSize: 13 }}>
-                  Immediately fetch the latest match data from football-data.org, bypassing the
-                  5-minute cache. Use sparingly — the API is rate-limited to 10 req/min.
+                  {t('admin.syncDesc')}
                 </Text>
               </div>
               <Button
@@ -448,7 +449,7 @@ export default function AdminPage() {
                 loading={syncMutation.isPending}
                 style={{ flexShrink: 0 }}
               >
-                Force Sync
+                {t('admin.syncBtn')}
               </Button>
             </div>
             {syncMutation.isSuccess && syncMutation.data.type === 'sync' && (
@@ -457,13 +458,15 @@ export default function AdminPage() {
                 type="success"
                 message={
                   syncMutation.data.synced
-                    ? `Synced ${syncMutation.data.count ?? 0} match(es) from the API.`
-                    : `Sync skipped: ${syncMutation.data.reason ?? 'cache is fresh'}.`
+                    ? t('admin.syncedCount', { count: syncMutation.data.count ?? 0 })
+                    : t('admin.syncSkipped', {
+                        reason: syncMutation.data.reason ?? t('admin.cacheFresh'),
+                      })
                 }
               />
             )}
             {syncMutation.isError && (
-              <Alert style={{ marginTop: 16 }} type="error" message="Failed to sync matches." />
+              <Alert style={{ marginTop: 16 }} type="error" message={t('admin.syncFailed')} />
             )}
           </Card>
         </div>
@@ -471,22 +474,11 @@ export default function AdminPage() {
 
       {/* Users */}
       <section>
-        <Text
-          type="secondary"
-          style={{
-            fontSize: 11,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            display: 'block',
-            marginBottom: 16,
-          }}
-        >
-          Users
-        </Text>
+        {sectionLabel(t('admin.sectionUsers'))}
         {usersLoading ? (
           <Spin />
         ) : !users?.length ? (
-          <Text type="secondary">No users found.</Text>
+          <Text type="secondary">{t('admin.noUsersFound')}</Text>
         ) : (
           <UsersTable users={users} selectedId={selectedUserId} onSelect={handleUserSelect} />
         )}
