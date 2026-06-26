@@ -1,5 +1,6 @@
 import { Alert, Button, Form, Input, Result, Typography } from 'antd';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { authApi } from '../api/client';
 
@@ -8,6 +9,7 @@ export default function ForgotPasswordPage() {
   const [sentEmail, setSentEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const handleFinish = async (values: { email: string }) => {
     setError('');
@@ -19,7 +21,7 @@ export default function ForgotPasswordPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Something went wrong';
+        t('auth.somethingWentWrong');
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -31,14 +33,9 @@ export default function ForgotPasswordPage() {
       <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
         <Result
           icon={<span style={{ fontSize: 48 }}>📧</span>}
-          title="Check your email"
-          subTitle={
-            <>
-              If an account exists for <strong>{sentEmail}</strong>, we've sent a password reset
-              link. It expires in 15 minutes.
-            </>
-          }
-          extra={<Link to="/login">Back to sign in</Link>}
+          title={t('auth.checkEmailTitle')}
+          subTitle={t('auth.checkEmailBody', { email: sentEmail })}
+          extra={<Link to="/login">{t('auth.backToSignIn')}</Link>}
         />
       </div>
     );
@@ -47,17 +44,17 @@ export default function ForgotPasswordPage() {
   return (
     <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
       <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 8 }}>
-        Forgot password?
+        {t('auth.forgotPassword')}
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ textAlign: 'center', marginBottom: 32 }}>
-        Enter your email and we'll send you a reset link.
+        {t('auth.forgotSubtitle')}
       </Typography.Paragraph>
 
       <Form layout="vertical" onFinish={handleFinish}>
         <Form.Item
-          label="Email"
+          label={t('auth.email')}
           name="email"
-          rules={[{ required: true, type: 'email', message: 'Enter a valid email' }]}
+          rules={[{ required: true, type: 'email', message: t('auth.emailInvalid') }]}
         >
           <Input autoFocus />
         </Form.Item>
@@ -66,13 +63,13 @@ export default function ForgotPasswordPage() {
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
-            Send reset link
+            {t('auth.sendResetLink')}
           </Button>
         </Form.Item>
       </Form>
 
       <Typography.Paragraph style={{ textAlign: 'center' }}>
-        <Link to="/login">Back to sign in</Link>
+        <Link to="/login">{t('auth.backToSignIn')}</Link>
       </Typography.Paragraph>
     </div>
   );

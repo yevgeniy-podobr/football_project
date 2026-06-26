@@ -1,5 +1,6 @@
 import { Alert, Button, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/client';
 
@@ -9,17 +10,18 @@ export default function ResetPasswordPage() {
   const token = searchParams.get('token') ?? '';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const handleFinish = async (values: { password: string }) => {
     setError('');
     setLoading(true);
     try {
       await authApi.resetPassword(token, values.password);
-      navigate('/login', { state: { notice: 'Password updated — please sign in.' } });
+      navigate('/login', { state: { notice: t('auth.passwordUpdated') } });
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Reset failed';
+        t('auth.resetFailed');
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -29,9 +31,9 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div style={{ maxWidth: 360, margin: '64px auto 0', textAlign: 'center' }}>
-        <Alert title="Invalid reset link — no token found." type="error" showIcon />
+        <Alert title={t('auth.invalidResetLink')} type="error" showIcon />
         <Typography.Paragraph style={{ marginTop: 16 }}>
-          <Link to="/forgot-password">Request a new link</Link>
+          <Link to="/forgot-password">{t('auth.requestNewLink')}</Link>
         </Typography.Paragraph>
       </div>
     );
@@ -40,28 +42,28 @@ export default function ResetPasswordPage() {
   return (
     <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
       <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-        Set new password
+        {t('auth.resetTitle')}
       </Typography.Title>
 
       <Form layout="vertical" onFinish={handleFinish}>
         <Form.Item
-          label="New password"
+          label={t('auth.newPassword')}
           name="password"
-          rules={[{ required: true, min: 6, message: 'Password must be at least 6 characters' }]}
+          rules={[{ required: true, min: 6, message: t('auth.passwordMin') }]}
         >
           <Input.Password autoFocus />
         </Form.Item>
 
         <Form.Item
-          label="Confirm password"
+          label={t('auth.confirmPassword')}
           name="confirm"
           dependencies={['password']}
           rules={[
-            { required: true, message: 'Please confirm your password' },
+            { required: true, message: t('auth.confirmPasswordRequired') },
             ({ getFieldValue }) => ({
               validator(_, value) {
                 if (!value || getFieldValue('password') === value) return Promise.resolve();
-                return Promise.reject(new Error('Passwords do not match'));
+                return Promise.reject(new Error(t('auth.passwordsNoMatch')));
               },
             }),
           ]}
@@ -73,7 +75,7 @@ export default function ResetPasswordPage() {
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
-            Update password
+            {t('auth.updatePassword')}
           </Button>
         </Form.Item>
       </Form>
