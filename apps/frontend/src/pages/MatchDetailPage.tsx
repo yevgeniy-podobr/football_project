@@ -584,7 +584,7 @@ export default function MatchDetailPage() {
           awayTeamName={match.awayTeam.name}
         />
       )}
-      {isScheduled && !match.aiPreview && (
+      {isScheduled && !match.aiPreview && user && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <Button
             onClick={() => aiPreviewMutation.mutate()}
