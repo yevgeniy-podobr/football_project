@@ -12,6 +12,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -349,12 +350,13 @@ function StandingsTable({
   const isMobile = !screens.sm;
   const effectiveAdvLabel = advancementLabel ?? t('matches.legendCL');
 
-  const posW = isMobile ? 30 : 40;
-  const statW = isMobile ? 26 : 40;
-  const gdW = isMobile ? 34 : 52;
-  const ptsW = isMobile ? 38 : 52;
+  const posW = isMobile ? 28 : 36;
+  const teamW = isMobile ? 110 : 160;
+  const statW = isMobile ? 26 : 36;
+  const gdW = isMobile ? 42 : 52;
+  const ptsW = isMobile ? 38 : 50;
 
-  const columns = [
+  const columns: ColumnsType<Standing> = [
     {
       title: '#',
       dataIndex: 'position',
@@ -378,6 +380,7 @@ function StandingsTable({
     {
       title: t('matches.colTeam'),
       key: 'team',
+      width: teamW,
       render: (_: unknown, row: Standing) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
           {row.team.crest && (
@@ -403,7 +406,12 @@ function StandingsTable({
       width: gdW,
       align: 'center' as const,
       render: (gd: number) => (
-        <Text style={{ color: gd > 0 ? '#4ade80' : gd < 0 ? '#f87171' : undefined }}>
+        <Text
+          style={{
+            color: gd > 0 ? '#4ade80' : gd < 0 ? '#f87171' : undefined,
+            whiteSpace: 'nowrap',
+          }}
+        >
           {gd > 0 ? `+${gd}` : gd}
         </Text>
       ),
@@ -413,7 +421,11 @@ function StandingsTable({
       dataIndex: 'points',
       width: ptsW,
       align: 'center' as const,
-      render: (pts: number) => <Text strong>{pts}</Text>,
+      render: (pts: number) => (
+        <Text strong style={{ whiteSpace: 'nowrap' }}>
+          {pts}
+        </Text>
+      ),
     },
   ];
 
@@ -425,6 +437,7 @@ function StandingsTable({
         rowKey="position"
         pagination={false}
         size="small"
+        scroll={{ x: 'max-content' }}
         onRow={(record) => ({
           style: {
             background:
