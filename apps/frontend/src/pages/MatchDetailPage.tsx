@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { matchesApi, predictionsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
-import type { AiMatchPreview, AiMatchStats, AiPreviewStore } from '../types';
+import type { AiMatchPreview, AiMatchStats, AiPreviewStore, AiStatsStore } from '../types';
 import { CompBadge } from './MatchesPage';
 
 const { Text, Title } = Typography;
@@ -14,6 +14,31 @@ const { Text, Title } = Typography;
 
 type Lang = 'en' | 'uk';
 type PredictedOutcome = 'HOME_WIN' | 'DRAW' | 'AWAY_WIN';
+
+function isStatsStore(obj: AiMatchStats | AiStatsStore): obj is AiStatsStore {
+  return !('goals' in obj);
+}
+
+function getStatsForLang(
+  aiStats: AiMatchStats | AiStatsStore | null | undefined,
+  lang: Lang,
+): AiMatchStats | null {
+  if (!aiStats) return null;
+  if (isStatsStore(aiStats)) return aiStats[lang] ?? null;
+  // Legacy flat shape — treat as English
+  return lang === 'en' ? aiStats : null;
+}
+
+function hasStatsForOtherLang(
+  aiStats: AiMatchStats | AiStatsStore | null | undefined,
+  lang: Lang,
+): boolean {
+  if (!aiStats) return false;
+  const other: Lang = lang === 'en' ? 'uk' : 'en';
+  if (isStatsStore(aiStats)) return aiStats[other] != null;
+  // Legacy flat shape is English — "other" lang available when current is 'uk'
+  return lang === 'uk';
+}
 
 function isPreviewStore(obj: AiMatchPreview | AiPreviewStore): obj is AiPreviewStore {
   return !('form' in obj);
@@ -404,7 +429,7 @@ export default function MatchDetailPage() {
   });
 
   const aiStatsMutation = useMutation({
-    mutationFn: () => matchesApi.getAiStats(matchId),
+    mutationFn: () => matchesApi.getAiStats(matchId, currentLang),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['match', matchId] }),
   });
 
@@ -434,6 +459,10 @@ export default function MatchDetailPage() {
   const isFinished = match.status === 'FINISHED';
   const isScheduled = match.status === 'SCHEDULED' || match.status === 'TIMED';
   const showScore = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
+
+  const highlightsUrl = `https://www.google.com/search?q=${encodeURIComponent(
+    `${match.homeTeam.name} vs ${match.awayTeam.name} highlights ${new Date(match.matchDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+  )}`;
 
   const isCorrect =
     prediction?.outcome != null
@@ -585,29 +614,56 @@ export default function MatchDetailPage() {
       </Card>
 
       {/* AI Stats */}
-      {isFinished && match.aiStats && (
-        <AiStatsCard
-          stats={match.aiStats}
-          homeTeamName={match.homeTeam.name}
-          awayTeamName={match.awayTeam.name}
-        />
-      )}
-      {isFinished && !match.aiStats && user && (
-        <div style={{ marginBottom: 24, textAlign: 'center' }}>
-          <Button
-            onClick={() => aiStatsMutation.mutate()}
-            loading={aiStatsMutation.isPending}
-            icon={<span>🤖</span>}
-          >
-            {t('matchDetail.getAiStats')}
-          </Button>
-          {aiStatsMutation.isError && (
-            <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-              {t('matchDetail.aiStatsError')}
-            </Text>
-          )}
-        </div>
-      )}
+      {(() => {
+        const statsForLang = getStatsForLang(match.aiStats, currentLang);
+        const hasOtherLangStats = hasStatsForOtherLang(match.aiStats, currentLang);
+        return (
+          <>
+            {isFinished && statsForLang && (
+              <AiStatsCard
+                stats={statsForLang}
+                homeTeamName={match.homeTeam.name}
+                awayTeamName={match.awayTeam.name}
+              />
+            )}
+            {isFinished && !statsForLang && user && (
+              <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                <Button
+                  onClick={() => aiStatsMutation.mutate()}
+                  loading={aiStatsMutation.isPending}
+                  icon={<span>{hasOtherLangStats ? '🌐' : '🤖'}</span>}
+                >
+                  {hasOtherLangStats
+                    ? t(
+                        currentLang === 'uk'
+                          ? 'matchDetail.translateToUk'
+                          : 'matchDetail.translateToEn',
+                      )
+                    : t('matchDetail.getAiStats')}
+                </Button>
+                {aiStatsMutation.isError && (
+                  <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+                    {t('matchDetail.aiStatsError')}
+                  </Text>
+                )}
+              </div>
+            )}
+            {isFinished && (
+              <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                <Button
+                  href={highlightsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  icon={<span>🎥</span>}
+                  type="text"
+                >
+                  {t('matchDetail.watchHighlights')}
+                </Button>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* AI Preview */}
       {(() => {

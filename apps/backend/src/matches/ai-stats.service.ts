@@ -38,6 +38,13 @@ export interface AiMatchPreview {
 
 export type Lang = 'en' | 'uk';
 
+// Per-language stats store — the shape persisted in Match.aiStats going forward.
+// Legacy records (flat AiMatchStats shape with a top-level "goals" key) are treated as English.
+export interface AiStatsStore {
+  en?: AiMatchStats;
+  uk?: AiMatchStats;
+}
+
 // Per-language preview store — the shape persisted in Match.aiPreview going forward.
 // Legacy records (flat AiMatchPreview shape with a top-level "form" key) are treated as English.
 export interface AiPreviewStore {
@@ -46,6 +53,22 @@ export interface AiPreviewStore {
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+function isLegacyStats(obj: unknown): boolean {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'goals' in (obj as object) &&
+    !('en' in (obj as object)) &&
+    !('uk' in (obj as object))
+  );
+}
+
+function normalizeStatsStore(raw: unknown): AiStatsStore {
+  if (raw === null || raw === undefined) return {};
+  if (isLegacyStats(raw)) return { en: raw as AiMatchStats };
+  return raw as AiStatsStore;
+}
 
 function isLegacyPreview(obj: unknown): boolean {
   return (
@@ -173,27 +196,38 @@ function parseJsonFromText(text: string): AiMatchStats {
 export class AiStatsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOrFetchStats(matchId: number): Promise<AiMatchStats> {
+  async getOrFetchStats(matchId: number, lang: Lang = 'en'): Promise<AiMatchStats> {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
       include: { homeTeam: true, awayTeam: true },
     });
     if (!match) throw new NotFoundException(`Match #${matchId} not found`);
 
-    if (match.aiStats !== null) {
-      return match.aiStats as unknown as AiMatchStats;
-    }
+    const store = normalizeStatsStore(match.aiStats);
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+    // Return cached data for this language immediately
+    const cachedLang = store[lang];
+    if (cachedLang) return cachedLang;
 
-    const matchDate = new Date(match.matchDate).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const otherLang: Lang = lang === 'en' ? 'uk' : 'en';
+    const otherLangData = store[otherLang];
 
-    const prompt = `Find the detailed statistics for this football match:
+    let stats: AiMatchStats;
+
+    if (otherLangData) {
+      // Stats data is language-agnostic (numbers + player names) — copy directly, no Gemini call needed
+      stats = otherLangData;
+    } else {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+      const matchDate = new Date(match.matchDate).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+
+      const prompt = `Find the detailed statistics for this football match:
 
 ${match.homeTeam.name} (home) vs ${match.awayTeam.name} (away)
 Competition: ${match.competition}
@@ -219,21 +253,20 @@ Return ONLY a valid JSON object — no markdown, no explanation — with this ex
 
 Use the Google Search tool to find accurate data. If data for a field is unavailable, use an empty array or 0.`;
 
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
-    });
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt,
+        config: { tools: [{ googleSearch: {} }] },
+      });
 
-    const text = response.text ?? '';
-    const stats = parseJsonFromText(text);
+      stats = parseJsonFromText(response.text ?? '');
+    }
 
+    const updatedStore: AiStatsStore = { ...store, [lang]: stats };
     await this.prisma.match.update({
       where: { id: matchId },
-      data: { aiStats: stats as unknown as Prisma.InputJsonValue },
+      data: { aiStats: updatedStore as unknown as Prisma.InputJsonValue },
     });
 
     return stats;

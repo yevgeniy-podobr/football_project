@@ -184,6 +184,7 @@
       "AWAY_WIN": "Перемога гостей"
     },
     "getAiStats": "AI статистика",
+    "watchHighlights": "Дивитись хайлайти",
     "aiStatsError": "Не вдалося завантажити статистику. Спробуйте ще раз.",
     "aiStatsTitle": "AI статистика матчу",
     "aiStatsGoals": "Голи",

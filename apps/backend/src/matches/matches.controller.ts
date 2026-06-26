@@ -36,8 +36,9 @@ export class MatchesController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/ai-stats')
-  getAiStats(@Param('id', ParseIntPipe) id: number) {
-    return this.aiStatsService.getOrFetchStats(id);
+  getAiStats(@Param('id', ParseIntPipe) id: number, @Query('lang') lang?: string) {
+    const resolvedLang = lang === 'uk' ? 'uk' : 'en';
+    return this.aiStatsService.getOrFetchStats(id, resolvedLang);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -25,6 +25,11 @@ export interface AiMatchStats {
   };
 }
 
+export interface AiStatsStore {
+  en?: AiMatchStats;
+  uk?: AiMatchStats;
+}
+
 export interface AiMatchPreview {
   form: { home: string; away: string };
   keyPlayers: {
@@ -77,7 +82,7 @@ export interface Match {
   halfTimeHome?: number | null;
   halfTimeAway?: number | null;
   winner?: string | null;
-  aiStats?: AiMatchStats | null;
+  aiStats?: AiMatchStats | AiStatsStore | null;
   aiPreview?: AiMatchPreview | AiPreviewStore | null;
   competition: string;
   competitionCode: string;

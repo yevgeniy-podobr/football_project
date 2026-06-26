@@ -65,7 +65,7 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Cron job (`SchedulerService`) auto-resolves predictions every 5 minutes via `@nestjs/schedule`
 - Admin panel (`/admin`) — DB stats, Resolve All, Force Sync, users table with expandable per-user prediction detail
 - Show/hide password toggle on all password fields via antd `Input.Password` (built-in eye toggle)
-- AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats`; Gemini 2.5 Flash + Google Search grounding returns goals, cards, possession, shots; result persisted in `Match.aiStats` (fetched once, served from DB on subsequent loads)
+- AI Match Statistics — on finished match detail page: "🤖 Get AI Stats" button calls `POST /matches/:id/ai-stats?lang=en|uk`; multilingual — persists `{ en?, uk? }` store in `Match.aiStats`; shows "🌐 Translate to Ukrainian/English" when only the other language is cached; stats data is language-agnostic (numbers + player names) so translation path copies existing data; "🎥 Watch Highlights" link always shown for finished matches (opens Google search in new tab)
 - AI Match Preview — on scheduled match detail page: "🔮 Get AI Preview" button calls `POST /matches/:id/ai-preview?lang=en|uk`; multilingual — persists `{ en?, uk? }` store in `Match.aiPreview`; shows "🌐 Translate to Ukrainian/English" when only the other language is cached; Gemini 2.5 Flash + Google Search grounding for fresh fetch, translation-only call (no grounding) when translating from existing data; endpoint returns 400 if match is not SCHEDULED/TIMED
 
 ## i18n / Internationalization
@@ -94,7 +94,7 @@ Currently translated namespaces:
 | `profile` | ProfilePage — title, username/email read-only labels, first/last name form labels and placeholders, save button, success and fallback error messages |
 | `admin`   | AdminPage — page title, section headers, stat KPI labels, action card titles/descs/buttons, result messages (`resolveSuccess`/`syncedCount`/`syncSkipped` use `{{}}` interpolation), users table column headers, role/outcome badges, user detail panel labels |
 | `matches` | MatchesPage — view/status segment labels, stage filter header, stage names (nested `stages` object), status badge labels (nested `status` object), prediction result badges, standings legend labels, empty/error messages, pagination total (`totalMatches` with `{{count}}`); `emptyStage` uses `{{stage}}`; `stageMatchCount` uses `{{count}}`; API key missing empty message split into 3 keys (`emptyApiKeyPre/Mid/Post`) to preserve `<Text code>` elements |
-| `matchDetail` | MatchDetailPage — back link, match-not-found, HT label, prediction card (title, states, outcome badges, form buttons), predicted/actual outcome labels (nested `outcome` object keyed by `HOME_WIN/DRAW/AWAY_WIN`), AI Stats card (title + 4 section labels + shots sub-label), AI Preview card (title + 4 section labels + `translateToEn`/`translateToUk` for translate button); stage label reuses `matches.stages.*`; team/player names from API stay untranslated |
+| `matchDetail` | MatchDetailPage — back link, match-not-found, HT label, prediction card (title, states, outcome badges, form buttons), predicted/actual outcome labels (nested `outcome` object keyed by `HOME_WIN/DRAW/AWAY_WIN`), AI Stats card (title + 4 section labels + shots sub-label + `watchHighlights`), AI Preview card (title + 4 section labels + `translateToEn`/`translateToUk` for translate button); `translateToEn`/`translateToUk` reused for both stats and preview translate buttons; stage label reuses `matches.stages.*`; team/player names from API stay untranslated |
 | `predictions` | PredictionsPage — page title (`{{name}}` interpolation), KPI strip labels, pie chart title + slice names, "All predictions" section, empty state (3-part subtitle with link), status/date line reuses `matches.status.*`, outcome label reuses `matchDetail.outcome.*`, exact/correct/wrong badges reuse `matches.predExact/predCorrect/predWrong`, pending label, delete button. Completes i18n rollout across all pages. |
 
 When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
@@ -130,9 +130,16 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `POST /auth/forgot-password` always returns 200 with the same message regardless of whether the email exists; returns after a 250 ms delay when not found to prevent timing-based enumeration
 
 ## AI Stats
-- `POST /matches/:id/ai-stats` — requires `JwtAuthGuard`; returns cached `Match.aiStats` immediately if already populated; otherwise calls Gemini 2.5 Flash with Google Search grounding, parses the JSON response, persists to `Match.aiStats`, and returns the result
-- Response shape: `{ goals: { home, away }, cards: { home, away }, possession: { home, away }, shots: { home, away } }`
+- `POST /matches/:id/ai-stats?lang=en|uk` — requires `JwtAuthGuard`; `lang` defaults to `'en'`
+- **DB shape (new):** `Match.aiStats` stores `{ en?: AiMatchStats, uk?: AiMatchStats }` — per-language store
+- **Backward compat:** legacy records with a flat `AiMatchStats` shape (top-level `goals` key) are treated as English on read
+- **Three-path logic in `AiStatsService.getOrFetchStats(matchId, lang)`:**
+  1. `store[lang]` exists → return immediately (cached)
+  2. `store[otherLang]` exists → copy directly (no Gemini call — stats are language-agnostic: numbers + player names don't change)
+  3. Nothing cached → fresh fetch with Gemini + Google Search grounding
+- Response shape per language: `{ goals: { home, away }, cards: { home, away }, possession: { home, away }, shots: { home, away } }`
 - Each goal: `{ scorer, minute }`; each card: `{ player, minute, type: "yellow"|"red" }`; possession: percentages; shots: `{ onTarget, total }`
+- **Watch Highlights:** always shown for FINISHED matches — opens `https://www.google.com/search?q={homeTeam}+vs+{awayTeam}+highlights+{matchDate}` in new tab
 - `AiStatsService` lives in `src/matches/ai-stats.service.ts`; registered in `MatchesModule`; also handles `getOrFetchPreview` for AI Preview
 
 ## AI Preview

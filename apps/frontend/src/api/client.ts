@@ -79,7 +79,10 @@ export const matchesApi = {
   getOne: (id: number) => api.get<Match>(`/matches/${id}`).then((r) => r.data),
   sync: (force = false) =>
     api.get('/matches/sync', { params: force ? { force: 'true' } : {} }).then((r) => r.data),
-  getAiStats: (id: number) => api.post<AiMatchStats>(`/matches/${id}/ai-stats`).then((r) => r.data),
+  getAiStats: (id: number, lang: 'en' | 'uk' = 'en') =>
+    api
+      .post<AiMatchStats>(`/matches/${id}/ai-stats`, undefined, { params: { lang } })
+      .then((r) => r.data),
   getAiPreview: (id: number, lang: 'en' | 'uk' = 'en') =>
     api
       .post<AiMatchPreview>(`/matches/${id}/ai-preview`, undefined, { params: { lang } })
