@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Col, Row, Space, Statistic, Tag, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { predictionsApi } from '../api/client';
@@ -16,12 +17,6 @@ function predictedOutcome(home: number, away: number): Outcome {
   return 'AWAY_WIN';
 }
 
-const OUTCOME_LABEL: Record<Outcome, string> = {
-  HOME_WIN: 'Home Win',
-  DRAW: 'Draw',
-  AWAY_WIN: 'Away Win',
-};
-
 function isCorrect(p: Prediction): boolean {
   return p.outcome !== null && predictedOutcome(p.predictedHome, p.predictedAway) === p.outcome;
 }
@@ -34,15 +29,21 @@ const CHART_STYLE = { background: '#fff', border: '1px solid #374151', borderRad
 // ─── outcome tag ─────────────────────────────────────────────────────────────
 
 function OutcomeTag({ p }: { p: Prediction }) {
+  const { t } = useTranslation();
   if (p.outcome === null) return null;
-  if (p.isExactScore) return <Tag color="gold">★ Exact</Tag>;
+  if (p.isExactScore) return <Tag color="gold">{t('matches.predExact')}</Tag>;
   const correct = isCorrect(p);
-  return correct ? <Tag color="success">✓ Correct</Tag> : <Tag color="error">✗ Wrong</Tag>;
+  return correct ? (
+    <Tag color="success">{t('matches.predCorrect')}</Tag>
+  ) : (
+    <Tag color="error">{t('matches.predWrong')}</Tag>
+  );
 }
 
 // ─── component ───────────────────────────────────────────────────────────────
 
 export default function PredictionsPage() {
+  const { t } = useTranslation();
   const user = useUserStore((s) => s.user);
   const qc = useQueryClient();
 
@@ -68,30 +69,17 @@ export default function PredictionsPage() {
   const accuracy =
     resolved.length > 0 ? Math.round((correctCount / resolved.length) * 1000) / 10 : 0;
 
-  // Pie: correct / incorrect / pending
   const pieData = [
-    { name: 'Correct', value: correctCount },
-    { name: 'Incorrect', value: incorrectCount },
-    { name: 'Pending', value: pending.length },
+    { name: t('predictions.pieCorrect'), value: correctCount },
+    { name: t('predictions.pieIncorrect'), value: incorrectCount },
+    { name: t('predictions.piePending'), value: pending.length },
   ].filter((d) => d.value > 0);
 
-  // Bar: by predicted outcome type
-  const byPredicted: Record<Outcome, { total: number; correct: number }> = {
-    HOME_WIN: { total: 0, correct: 0 },
-    DRAW: { total: 0, correct: 0 },
-    AWAY_WIN: { total: 0, correct: 0 },
-  };
-  for (const p of resolved) {
-    const po = predictedOutcome(p.predictedHome, p.predictedAway);
-    byPredicted[po].total++;
-    if (isCorrect(p)) byPredicted[po].correct++;
-  }
-
   const kpis = [
-    { label: 'Predictions', value: predictions.length, color: undefined },
-    { label: 'Correct', value: correctCount, color: '#4ade80' },
-    { label: 'Exact scores', value: exactCount, color: '#facc15' },
-    { label: 'Accuracy', value: `${accuracy}%`, color: '#60a5fa' },
+    { label: t('predictions.kpiPredictions'), value: predictions.length, color: undefined },
+    { label: t('predictions.kpiCorrect'), value: correctCount, color: '#4ade80' },
+    { label: t('predictions.kpiExact'), value: exactCount, color: '#facc15' },
+    { label: t('predictions.kpiAccuracy'), value: `${accuracy}%`, color: '#60a5fa' },
   ];
 
   const predBorderColor = (p: Prediction) => {
@@ -102,7 +90,7 @@ export default function PredictionsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
       <Title level={3} style={{ margin: 0 }}>
-        {`${user?.username ?? user?.email}'s Predictions`}
+        {t('predictions.title', { name: user?.username ?? user?.email })}
       </Title>
 
       {/* KPI strip */}
@@ -126,7 +114,7 @@ export default function PredictionsPage() {
       {resolved.length > 0 && (
         <Row gutter={[24, 24]}>
           <Col xs={24} md={12}>
-            <Card title="Results breakdown">
+            <Card title={t('predictions.chartResultsBreakdown')}>
               <ResponsiveContainer width="100%" height={220}>
                 <PieChart>
                   <Pie
@@ -154,16 +142,18 @@ export default function PredictionsPage() {
       {/* Prediction list */}
       <div>
         <Title level={5} style={{ marginBottom: 16 }}>
-          All predictions
+          {t('predictions.allPredictions')}
         </Title>
 
         {predictions.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <Text type="secondary" style={{ display: 'block', marginBottom: 4 }}>
-              No predictions yet.
+              {t('predictions.emptyTitle')}
             </Text>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              Go to a <Link to="/">match</Link> to add your first prediction.
+              {t('predictions.emptySubtitlePre')}{' '}
+              <Link to="/">{t('predictions.emptySubtitleLink')}</Link>{' '}
+              {t('predictions.emptySubtitlePost')}
             </Text>
           </div>
         )}
@@ -205,7 +195,12 @@ export default function PredictionsPage() {
                       {p.match?.homeTeam.name} vs {p.match?.awayTeam.name}
                     </Link>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      {p.match?.status} ·{' '}
+                      {p.match?.status
+                        ? t(`matches.status.${p.match.status}`, {
+                            defaultValue: p.match.status,
+                          })
+                        : ''}{' '}
+                      ·{' '}
                       {new Date(p.match?.matchDate ?? '').toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: 'short',
@@ -227,7 +222,7 @@ export default function PredictionsPage() {
                       {p.predictedHome} – {p.predictedAway}
                     </Text>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                      {OUTCOME_LABEL[po]}
+                      {t(`matchDetail.outcome.${po}`)}
                     </Text>
                   </div>
 
@@ -252,11 +247,15 @@ export default function PredictionsPage() {
                             color: p.isExactScore ? '#facc15' : correct ? '#4ade80' : '#f87171',
                           }}
                         >
-                          {p.isExactScore ? '★ Exact' : correct ? '✓ Correct' : '✗ Wrong'}
+                          {p.isExactScore
+                            ? t('matches.predExact')
+                            : correct
+                              ? t('matches.predCorrect')
+                              : t('matches.predWrong')}
                         </Text>
                       ) : (
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          Pending
+                          {t('predictions.pending')}
                         </Text>
                       )}
                     </div>
@@ -272,7 +271,7 @@ export default function PredictionsPage() {
                         onClick={() => deleteMutation.mutate(p.id)}
                         loading={deleteMutation.isPending}
                       >
-                        Delete
+                        {t('predictions.delete')}
                       </Button>
                     )}
                   </Space>

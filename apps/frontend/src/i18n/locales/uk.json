@@ -144,6 +144,24 @@
     "groupPrefix": "Група",
     "colTeam": "Команда"
   },
+  "predictions": {
+    "title": "Прогнози {{name}}",
+    "kpiPredictions": "Прогнози",
+    "kpiCorrect": "Правильних",
+    "kpiExact": "Точні рахунки",
+    "kpiAccuracy": "Точність",
+    "chartResultsBreakdown": "Розподіл результатів",
+    "pieCorrect": "Правильно",
+    "pieIncorrect": "Невірно",
+    "piePending": "Очікує",
+    "allPredictions": "Всі прогнози",
+    "emptyTitle": "Прогнозів поки немає.",
+    "emptySubtitlePre": "Перейдіть до",
+    "emptySubtitleLink": "матчу",
+    "emptySubtitlePost": "щоб додати перший прогноз.",
+    "pending": "Очікує",
+    "delete": "Видалити"
+  },
   "matchDetail": {
     "backToMatches": "Назад до матчів",
     "matchNotFound": "Матч не знайдено",

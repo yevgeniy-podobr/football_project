@@ -144,6 +144,24 @@
     "groupPrefix": "Group",
     "colTeam": "Team"
   },
+  "predictions": {
+    "title": "{{name}}'s Predictions",
+    "kpiPredictions": "Predictions",
+    "kpiCorrect": "Correct",
+    "kpiExact": "Exact scores",
+    "kpiAccuracy": "Accuracy",
+    "chartResultsBreakdown": "Results breakdown",
+    "pieCorrect": "Correct",
+    "pieIncorrect": "Incorrect",
+    "piePending": "Pending",
+    "allPredictions": "All predictions",
+    "emptyTitle": "No predictions yet.",
+    "emptySubtitlePre": "Go to a",
+    "emptySubtitleLink": "match",
+    "emptySubtitlePost": "to add your first prediction.",
+    "pending": "Pending",
+    "delete": "Delete"
+  },
   "matchDetail": {
     "backToMatches": "Back to matches",
     "matchNotFound": "Match not found",
