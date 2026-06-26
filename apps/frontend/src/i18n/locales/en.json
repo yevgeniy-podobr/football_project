@@ -33,5 +33,15 @@
     "haveAccount": "Already have an account?",
     "loginFailed": "Login failed",
     "registrationFailed": "Registration failed"
+  },
+  "profile": {
+    "title": "Profile",
+    "username": "Username",
+    "email": "Email",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "save": "Save",
+    "savedSuccess": "Profile saved.",
+    "saveFailed": "Failed to save profile"
   }
 }

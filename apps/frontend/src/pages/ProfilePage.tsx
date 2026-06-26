@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
 
@@ -14,6 +15,7 @@ export default function ProfilePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [form] = Form.useForm<{ firstName: string; lastName: string }>();
+  const { t } = useTranslation();
 
   const firstName = Form.useWatch('firstName', form);
   const lastName = Form.useWatch('lastName', form);
@@ -36,7 +38,7 @@ export default function ProfilePage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Failed to save profile';
+        t('profile.saveFailed');
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -46,14 +48,14 @@ export default function ProfilePage() {
   return (
     <div style={{ maxWidth: 480, margin: '0 auto' }}>
       <Title level={3} style={{ marginBottom: 24 }}>
-        Profile
+        {t('profile.title')}
       </Title>
 
       <Card style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Username
+              {t('profile.username')}
             </Text>
             <div>
               <Text strong>{user?.username ?? '—'}</Text>
@@ -61,7 +63,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Email
+              {t('profile.email')}
             </Text>
             <div>
               <Text strong>{user?.email}</Text>
@@ -79,17 +81,22 @@ export default function ProfilePage() {
           lastName: user?.lastName ?? '',
         }}
       >
-        <Form.Item label="First name" name="firstName">
-          <Input placeholder="First name" />
+        <Form.Item label={t('profile.firstName')} name="firstName">
+          <Input placeholder={t('profile.firstName')} />
         </Form.Item>
 
-        <Form.Item label="Last name" name="lastName">
-          <Input placeholder="Last name" />
+        <Form.Item label={t('profile.lastName')} name="lastName">
+          <Input placeholder={t('profile.lastName')} />
         </Form.Item>
 
         {error && <Alert title={error} type="error" showIcon style={{ marginBottom: 16 }} />}
         {success && (
-          <Alert title="Profile saved." type="success" showIcon style={{ marginBottom: 16 }} />
+          <Alert
+            title={t('profile.savedSuccess')}
+            type="success"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
         )}
 
         <Form.Item>
@@ -99,7 +106,7 @@ export default function ProfilePage() {
             loading={loading}
             disabled={!hasChanged || loading}
           >
-            Save
+            {t('profile.save')}
           </Button>
         </Form.Item>
       </Form>
