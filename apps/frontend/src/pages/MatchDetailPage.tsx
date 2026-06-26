@@ -461,7 +461,7 @@ export default function MatchDetailPage() {
   const showScore = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
   const highlightsUrl = `https://www.google.com/search?q=${encodeURIComponent(
-    `${match.homeTeam.name} vs ${match.awayTeam.name} highlights ${new Date(match.matchDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
+    `${match.homeTeam.name} vs ${match.awayTeam.name} ${t('matchDetail.highlightsSearchTerm')} ${new Date(match.matchDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
   )}`;
 
   const isCorrect =

@@ -185,6 +185,7 @@
     },
     "getAiStats": "Get AI Stats",
     "watchHighlights": "Watch Highlights",
+    "highlightsSearchTerm": "video review of the match",
     "aiStatsError": "Failed to load stats. Try again.",
     "aiStatsTitle": "AI Match Statistics",
     "aiStatsGoals": "Goals",

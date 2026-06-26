@@ -185,6 +185,7 @@
     },
     "getAiStats": "AI статистика",
     "watchHighlights": "Дивитись хайлайти",
+    "highlightsSearchTerm": "відео огляд матчу",
     "aiStatsError": "Не вдалося завантажити статистику. Спробуйте ще раз.",
     "aiStatsTitle": "AI статистика матчу",
     "aiStatsGoals": "Голи",
