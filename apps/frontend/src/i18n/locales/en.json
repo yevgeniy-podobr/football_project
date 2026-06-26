@@ -184,7 +184,7 @@
       "AWAY_WIN": "Away Win"
     },
     "getAiStats": "Get AI Stats",
-    "watchHighlights": "Watch Highlights",
+    "watchHighlights": "Search for match review videos",
     "highlightsSearchTerm": "video review of the match",
     "aiStatsError": "Failed to load stats. Try again.",
     "aiStatsTitle": "AI Match Statistics",
