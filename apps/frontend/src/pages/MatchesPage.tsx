@@ -121,8 +121,13 @@ function MatchRow({
   backQuery?: string;
 }) {
   const navigate = useNavigate();
+  const screens = useBreakpoint();
+  const isMobile = !screens.sm;
   const showScore = SHOW_SCORE_STATUSES.has(match.status);
   const myPrediction = userId != null ? match.predictions.find((p) => p.userId === userId) : null;
+
+  const teamDisplayName = (team: { name: string; shortName?: string | null }) =>
+    isMobile ? (team.shortName ?? team.name) : team.name;
 
   return (
     <Card
@@ -135,8 +140,16 @@ function MatchRow({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Teams */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Space style={{ marginBottom: 6, display: 'flex' }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              marginBottom: 6,
+              overflow: 'hidden',
+            }}
+          >
             {match.homeTeam.crest && (
               <img
                 src={match.homeTeam.crest}
@@ -148,10 +161,10 @@ function MatchRow({
               strong
               style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             >
-              {match.homeTeam.name}
+              {teamDisplayName(match.homeTeam)}
             </Text>
-          </Space>
-          <Space style={{ display: 'flex' }}>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
             {match.awayTeam.crest && (
               <img
                 src={match.awayTeam.crest}
@@ -163,13 +176,15 @@ function MatchRow({
               strong
               style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
             >
-              {match.awayTeam.name}
+              {teamDisplayName(match.awayTeam)}
             </Text>
-          </Space>
+          </div>
         </div>
 
         {/* Score / Date */}
-        <div style={{ textAlign: 'center', padding: '0 24px', flexShrink: 0 }}>
+        <div
+          style={{ textAlign: 'center', padding: isMobile ? '0 10px' : '0 24px', flexShrink: 0 }}
+        >
           {showScore ? (
             <Text style={{ fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
               {match.homeScore ?? 0} – {match.awayScore ?? 0}
@@ -323,11 +338,19 @@ function StandingsTable({
   showRelegation = true,
   advancementLabel = 'Champions League',
 }: StandingsTableProps) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.sm;
+
+  const posW = isMobile ? 30 : 40;
+  const statW = isMobile ? 26 : 40;
+  const gdW = isMobile ? 34 : 52;
+  const ptsW = isMobile ? 38 : 52;
+
   const columns = [
     {
       title: '#',
       dataIndex: 'position',
-      width: 40,
+      width: posW,
       render: (pos: number) => {
         const isAdv = pos <= advancementSpots;
         const isRel = showRelegation && pos > total - RELEGATION;
@@ -348,26 +371,28 @@ function StandingsTable({
       title: 'Team',
       key: 'team',
       render: (_: unknown, row: Standing) => (
-        <Space size={8}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
           {row.team.crest && (
             <img
               src={row.team.crest}
               alt=""
-              style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+              style={{ width: 18, height: 18, objectFit: 'contain', flexShrink: 0 }}
             />
           )}
-          <Text>{row.team.shortName ?? row.team.name}</Text>
-        </Space>
+          <Text style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {row.team.shortName ?? row.team.name}
+          </Text>
+        </div>
       ),
     },
-    { title: 'P', dataIndex: 'playedGames', width: 40, align: 'center' as const },
-    { title: 'W', dataIndex: 'won', width: 40, align: 'center' as const },
-    { title: 'D', dataIndex: 'draw', width: 40, align: 'center' as const },
-    { title: 'L', dataIndex: 'lost', width: 40, align: 'center' as const },
+    { title: 'P', dataIndex: 'playedGames', width: statW, align: 'center' as const },
+    { title: 'W', dataIndex: 'won', width: statW, align: 'center' as const },
+    { title: 'D', dataIndex: 'draw', width: statW, align: 'center' as const },
+    { title: 'L', dataIndex: 'lost', width: statW, align: 'center' as const },
     {
       title: 'GD',
       dataIndex: 'goalDifference',
-      width: 52,
+      width: gdW,
       align: 'center' as const,
       render: (gd: number) => (
         <Text style={{ color: gd > 0 ? '#4ade80' : gd < 0 ? '#f87171' : undefined }}>
@@ -378,7 +403,7 @@ function StandingsTable({
     {
       title: 'Pts',
       dataIndex: 'points',
-      width: 52,
+      width: ptsW,
       align: 'center' as const,
       render: (pts: number) => <Text strong>{pts}</Text>,
     },
