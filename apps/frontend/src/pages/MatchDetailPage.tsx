@@ -559,7 +559,7 @@ export default function MatchDetailPage() {
           awayTeamName={match.awayTeam.name}
         />
       )}
-      {isFinished && !match.aiStats && (
+      {isFinished && !match.aiStats && user && (
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
           <Button
             onClick={() => aiStatsMutation.mutate()}
