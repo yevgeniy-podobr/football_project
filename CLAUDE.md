@@ -90,6 +90,7 @@ Currently translated namespaces:
 | Namespace | Coverage |
 |-----------|----------|
 | `navbar`  | All Navbar labels (brand, nav items, user menu, auth buttons, admin badge) |
+| `auth`    | LoginPage and RegisterPage — titles, field labels, validation messages, buttons, links, fallback error strings |
 
 When adding translations for a new page or feature, add a new top-level key block (e.g. `"matches": { ... }`) to both `en.json` and `uk.json`, then call `useTranslation()` in the component.
 

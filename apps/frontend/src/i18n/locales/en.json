@@ -12,5 +12,26 @@
     "signIn": "Sign in",
     "langEn": "EN",
     "langUk": "UA"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "email": "Email",
+    "emailInvalid": "Enter a valid email",
+    "password": "Password",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 6 characters",
+    "username": "Username",
+    "usernameMin": "Username must be at least 3 characters",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "signIn": "Sign in",
+    "register": "Register",
+    "createAccount": "Create account",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "No account?",
+    "haveAccount": "Already have an account?",
+    "loginFailed": "Login failed",
+    "registrationFailed": "Registration failed"
   }
 }

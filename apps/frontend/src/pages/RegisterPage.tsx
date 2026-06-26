@@ -1,5 +1,6 @@
 import { Alert, Button, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
@@ -9,6 +10,7 @@ export default function RegisterPage() {
   const setUser = useUserStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const handleFinish = async (values: {
     username: string;
@@ -26,7 +28,7 @@ export default function RegisterPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Registration failed';
+        t('auth.registrationFailed');
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -36,38 +38,38 @@ export default function RegisterPage() {
   return (
     <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
       <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-        Create account
+        {t('auth.registerTitle')}
       </Typography.Title>
 
       <Form layout="vertical" onFinish={handleFinish} autoComplete="off">
         <Form.Item
-          label="Username"
+          label={t('auth.username')}
           name="username"
-          rules={[{ required: true, min: 3, message: 'Username must be at least 3 characters' }]}
+          rules={[{ required: true, min: 3, message: t('auth.usernameMin') }]}
         >
           <Input autoFocus />
         </Form.Item>
 
-        <Form.Item label="First name" name="firstName">
+        <Form.Item label={t('auth.firstName')} name="firstName">
           <Input />
         </Form.Item>
 
-        <Form.Item label="Last name" name="lastName">
+        <Form.Item label={t('auth.lastName')} name="lastName">
           <Input />
         </Form.Item>
 
         <Form.Item
-          label="Email"
+          label={t('auth.email')}
           name="email"
-          rules={[{ required: true, type: 'email', message: 'Enter a valid email' }]}
+          rules={[{ required: true, type: 'email', message: t('auth.emailInvalid') }]}
         >
           <Input />
         </Form.Item>
 
         <Form.Item
-          label="Password"
+          label={t('auth.password')}
           name="password"
-          rules={[{ required: true, min: 6, message: 'Password must be at least 6 characters' }]}
+          rules={[{ required: true, min: 6, message: t('auth.passwordMin') }]}
         >
           <Input.Password />
         </Form.Item>
@@ -76,13 +78,13 @@ export default function RegisterPage() {
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
-            Create account
+            {t('auth.createAccount')}
           </Button>
         </Form.Item>
       </Form>
 
       <Typography.Paragraph style={{ textAlign: 'center' }}>
-        Already have an account? <Link to="/login">Sign in</Link>
+        {t('auth.haveAccount')} <Link to="/login">{t('auth.signIn')}</Link>
       </Typography.Paragraph>
     </div>
   );

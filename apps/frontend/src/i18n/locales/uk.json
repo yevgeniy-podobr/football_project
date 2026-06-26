@@ -12,5 +12,26 @@
     "signIn": "Увійти",
     "langEn": "EN",
     "langUk": "UA"
+  },
+  "auth": {
+    "loginTitle": "Увійти",
+    "registerTitle": "Створити акаунт",
+    "email": "Електронна пошта",
+    "emailInvalid": "Введіть дійсну електронну пошту",
+    "password": "Пароль",
+    "passwordRequired": "Пароль є обов'язковим",
+    "passwordMin": "Пароль повинен містити щонайменше 6 символів",
+    "username": "Ім'я користувача",
+    "usernameMin": "Ім'я користувача повинно містити щонайменше 3 символи",
+    "firstName": "Ім'я",
+    "lastName": "Прізвище",
+    "signIn": "Увійти",
+    "register": "Реєстрація",
+    "createAccount": "Створити акаунт",
+    "forgotPassword": "Забули пароль?",
+    "noAccount": "Немає акаунту?",
+    "haveAccount": "Вже є акаунт?",
+    "loginFailed": "Помилка входу",
+    "registrationFailed": "Помилка реєстрації"
   }
 }

@@ -1,5 +1,6 @@
 import { Alert, Button, Form, Input, Typography } from 'antd';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
@@ -10,6 +11,7 @@ export default function LoginPage() {
   const setUser = useUserStore((s) => s.setUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   const notice = (location.state as { notice?: string } | null)?.notice;
 
@@ -23,7 +25,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        'Login failed';
+        t('auth.loginFailed');
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setLoading(false);
@@ -33,24 +35,24 @@ export default function LoginPage() {
   return (
     <div style={{ maxWidth: 360, margin: '64px auto 0' }}>
       <Typography.Title level={3} style={{ textAlign: 'center', marginBottom: 32 }}>
-        Sign in
+        {t('auth.loginTitle')}
       </Typography.Title>
 
       {notice && <Alert title={notice} type="success" showIcon style={{ marginBottom: 16 }} />}
 
       <Form layout="vertical" onFinish={handleFinish} autoComplete="off">
         <Form.Item
-          label="Email"
+          label={t('auth.email')}
           name="email"
-          rules={[{ required: true, type: 'email', message: 'Enter a valid email' }]}
+          rules={[{ required: true, type: 'email', message: t('auth.emailInvalid') }]}
         >
           <Input autoFocus />
         </Form.Item>
 
         <Form.Item
-          label="Password"
+          label={t('auth.password')}
           name="password"
-          rules={[{ required: true, message: 'Password is required' }]}
+          rules={[{ required: true, message: t('auth.passwordRequired') }]}
         >
           <Input.Password />
         </Form.Item>
@@ -59,16 +61,16 @@ export default function LoginPage() {
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading} block>
-            Sign in
+            {t('auth.signIn')}
           </Button>
         </Form.Item>
       </Form>
 
       <Typography.Paragraph style={{ textAlign: 'center', marginTop: 4 }}>
-        <Link to="/forgot-password">Forgot password?</Link>
+        <Link to="/forgot-password">{t('auth.forgotPassword')}</Link>
       </Typography.Paragraph>
       <Typography.Paragraph style={{ textAlign: 'center' }}>
-        No account? <Link to="/register">Register</Link>
+        {t('auth.noAccount')} <Link to="/register">{t('auth.register')}</Link>
       </Typography.Paragraph>
     </div>
   );
