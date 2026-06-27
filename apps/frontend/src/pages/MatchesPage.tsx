@@ -534,9 +534,18 @@ const WC_KNOCKOUT_STAGES = [
 ] as const;
 type WCKnockoutStage = (typeof WC_KNOCKOUT_STAGES)[number];
 
-function WCKnockoutView({ userId, backQuery }: { userId?: number; backQuery?: string }) {
+function WCKnockoutView({
+  userId,
+  backQuery,
+  knockoutStage,
+  onStageChange,
+}: {
+  userId?: number;
+  backQuery?: string;
+  knockoutStage: WCKnockoutStage;
+  onStageChange: (stage: WCKnockoutStage) => void;
+}) {
   const { t } = useTranslation();
-  const [knockoutStage, setKnockoutStage] = useState<WCKnockoutStage>('LAST_32');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['matches', 'knockout', 'WC', knockoutStage],
@@ -555,7 +564,7 @@ function WCKnockoutView({ userId, backQuery }: { userId?: number; backQuery?: st
     <div>
       <Tabs
         activeKey={knockoutStage}
-        onChange={(k) => setKnockoutStage(k as WCKnockoutStage)}
+        onChange={(k) => onStageChange(k as WCKnockoutStage)}
         items={stageTabs}
         size="small"
         style={{ marginBottom: 8 }}
@@ -599,8 +608,35 @@ export default function MatchesPage() {
   const statusFilter = searchParams.get('status') || undefined;
   const page = Number.parseInt(searchParams.get('page') ?? '1', 10) || 1;
   const [stageFilter, setStageFilter] = useState<string | undefined>();
-  const [view, setView] = useState<'matches' | 'table' | 'knockout'>('matches');
   const [limit, setLimit] = useState(10);
+
+  // view and knockoutStage live in the URL so they survive round-trips to match detail and back
+  const viewParam = searchParams.get('view');
+  const view: 'matches' | 'table' | 'knockout' =
+    viewParam === 'table' || viewParam === 'knockout' ? viewParam : 'matches';
+  const setView = (v: 'matches' | 'table' | 'knockout') => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (v === 'matches') next.delete('view');
+      else next.set('view', v);
+      if (v !== 'knockout') next.delete('stage');
+      return next;
+    });
+  };
+
+  const knockoutStageParam = searchParams.get('stage');
+  const knockoutStage: WCKnockoutStage = (WC_KNOCKOUT_STAGES as readonly string[]).includes(
+    knockoutStageParam ?? '',
+  )
+    ? (knockoutStageParam as WCKnockoutStage)
+    : 'LAST_32';
+  const setKnockoutStage = (stage: WCKnockoutStage) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('stage', stage);
+      return next;
+    });
+  };
   const user = useUserStore((s) => s.user);
   const screens = useBreakpoint();
   const isMobile = screens.md === false;
@@ -652,11 +688,16 @@ export default function MatchesPage() {
     return p.toString();
   })();
 
+  const knockoutBackQuery = new URLSearchParams({
+    comp: 'WC',
+    view: 'knockout',
+    stage: knockoutStage,
+  }).toString();
+
   const handleCompetition = (code: CompCode) => {
-    // Omitting status and page from the new params resets them to their defaults
+    // Replacing all params resets status, page, view, and stage to their defaults
     setSearchParams({ comp: code }, { replace: true });
     setStageFilter(undefined);
-    setView('matches');
   };
 
   const handleStatusFilter = (value: string) => {
@@ -826,7 +867,12 @@ export default function MatchesPage() {
 
       {/* Knockout bracket view (WC only) */}
       {view === 'knockout' && competition === 'WC' && (
-        <WCKnockoutView userId={user?.id} backQuery={backQuery} />
+        <WCKnockoutView
+          userId={user?.id}
+          backQuery={knockoutBackQuery}
+          knockoutStage={knockoutStage}
+          onStageChange={setKnockoutStage}
+        />
       )}
 
       {/* Standings view */}

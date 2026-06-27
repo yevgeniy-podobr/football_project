@@ -389,6 +389,8 @@ export default function MatchDetailPage() {
   const comp = searchParams.get('comp');
   const statusParam = searchParams.get('status');
   const pageParam = searchParams.get('page');
+  const viewParam = searchParams.get('view');
+  const stageParam = searchParams.get('stage');
   const qc = useQueryClient();
   const user = useUserStore((s) => s.user);
   const [form] = Form.useForm();
@@ -502,6 +504,12 @@ export default function MatchDetailPage() {
         icon={<LeftOutlined />}
         onClick={() => {
           if (!comp) return navigate(-1);
+          if (viewParam === 'knockout') {
+            const p = new URLSearchParams({ comp, view: 'knockout' });
+            if (stageParam) p.set('stage', stageParam);
+            navigate(`/?${p.toString()}`);
+            return;
+          }
           const p = new URLSearchParams({ comp });
           if (statusParam) p.set('status', statusParam);
           if (pageParam && pageParam !== '1') p.set('page', pageParam);
