@@ -1,3 +1,4 @@
+import { QuestionOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
@@ -18,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { configApi, matchesApi, standingsApi } from '../api/client';
 import { useUserStore } from '../store/userStore';
-import type { GroupStanding, Match, MatchStatus, Outcome, Standing } from '../types';
+import type { GroupStanding, Match, MatchStatus, Outcome, Standing, Team } from '../types';
 import { STAGE_ORDER, seasonLabel, stageLabel } from '../utils/matchUtils';
 
 const { Text } = Typography;
@@ -115,6 +116,54 @@ function PredictionBadge({ p }: { p: Match['predictions'][number] }) {
   );
 }
 
+// ─── TBD team helpers ─────────────────────────────────────────────────────────
+
+function isTeamTBD(team: Team): boolean {
+  return team.externalId === 0 || team.name === 'TBD';
+}
+
+function TeamDisplay({ team, isMobile }: { team: Team; isMobile: boolean }) {
+  const { t } = useTranslation();
+  if (isTeamTBD(team)) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 3,
+            background: 'rgba(255,255,255,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <QuestionOutlined style={{ fontSize: 10, color: '#6b7280' }} />
+        </div>
+        <Text type="secondary" style={{ fontStyle: 'italic' }}>
+          {t('matches.tbd')}
+        </Text>
+      </div>
+    );
+  }
+  const displayName = isMobile ? (team.shortName ?? team.name) : team.name;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+      {team.crest && (
+        <img
+          src={team.crest}
+          alt=""
+          style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+        />
+      )}
+      <Text strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {displayName}
+      </Text>
+    </div>
+  );
+}
+
 // ─── single match card ────────────────────────────────────────────────────────
 
 const SHOW_SCORE_STATUSES = new Set(['FINISHED', 'IN_PLAY', 'PAUSED']);
@@ -134,9 +183,6 @@ function MatchRow({
   const isMobile = !screens.sm;
   const showScore = SHOW_SCORE_STATUSES.has(match.status);
   const myPrediction = userId != null ? match.predictions.find((p) => p.userId === userId) : null;
-
-  const teamDisplayName = (team: { name: string; shortName?: string | null }) =>
-    isMobile ? (team.shortName ?? team.name) : team.name;
 
   return (
     <Card
@@ -159,34 +205,10 @@ function MatchRow({
               overflow: 'hidden',
             }}
           >
-            {match.homeTeam.crest && (
-              <img
-                src={match.homeTeam.crest}
-                alt=""
-                style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
-              />
-            )}
-            <Text
-              strong
-              style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            >
-              {teamDisplayName(match.homeTeam)}
-            </Text>
+            <TeamDisplay team={match.homeTeam} isMobile={isMobile} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-            {match.awayTeam.crest && (
-              <img
-                src={match.awayTeam.crest}
-                alt=""
-                style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
-              />
-            )}
-            <Text
-              strong
-              style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            >
-              {teamDisplayName(match.awayTeam)}
-            </Text>
+            <TeamDisplay team={match.awayTeam} isMobile={isMobile} />
           </div>
         </div>
 
@@ -501,6 +523,72 @@ function WCGroupsView({ groups }: { groups: GroupStanding[] }) {
   );
 }
 
+// ─── WC knockout bracket view ─────────────────────────────────────────────────
+
+const WC_KNOCKOUT_STAGES = [
+  'LAST_32',
+  'LAST_16',
+  'QUARTER_FINALS',
+  'SEMI_FINALS',
+  'FINAL',
+] as const;
+type WCKnockoutStage = (typeof WC_KNOCKOUT_STAGES)[number];
+
+function WCKnockoutView({ userId, backQuery }: { userId?: number; backQuery?: string }) {
+  const { t } = useTranslation();
+  const [knockoutStage, setKnockoutStage] = useState<WCKnockoutStage>('LAST_32');
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['matches', 'knockout', 'WC', knockoutStage],
+    queryFn: () => matchesApi.getAll(undefined, 'WC', 1, 100, knockoutStage),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const matches = data?.data ?? [];
+
+  const stageTabs = WC_KNOCKOUT_STAGES.map((key) => ({
+    key,
+    label: t(`matches.stages.${key}`, { defaultValue: stageLabel(key) }),
+  }));
+
+  return (
+    <div>
+      <Tabs
+        activeKey={knockoutStage}
+        onChange={(k) => setKnockoutStage(k as WCKnockoutStage)}
+        items={stageTabs}
+        size="small"
+        style={{ marginBottom: 8 }}
+      />
+
+      {isLoading && (
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+          <Spin size="large" />
+        </div>
+      )}
+
+      {error && (
+        <Alert
+          title={t('matches.errorMatches')}
+          description={t('matches.errorMatchesDesc')}
+          type="error"
+          showIcon
+        />
+      )}
+
+      {!isLoading && !error && matches.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+          <Text type="secondary">{t('matches.emptyKnockout')}</Text>
+        </div>
+      )}
+
+      {!isLoading &&
+        !error &&
+        matches.map((m) => <MatchRow key={m.id} match={m} userId={userId} backQuery={backQuery} />)}
+    </div>
+  );
+}
+
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function MatchesPage() {
@@ -511,7 +599,7 @@ export default function MatchesPage() {
   const statusFilter = searchParams.get('status') || undefined;
   const page = Number.parseInt(searchParams.get('page') ?? '1', 10) || 1;
   const [stageFilter, setStageFilter] = useState<string | undefined>();
-  const [view, setView] = useState<'matches' | 'table'>('matches');
+  const [view, setView] = useState<'matches' | 'table' | 'knockout'>('matches');
   const [limit, setLimit] = useState(10);
   const user = useUserStore((s) => s.user);
   const screens = useBreakpoint();
@@ -637,15 +725,27 @@ export default function MatchesPage() {
         tabBarExtraContent={
           isMobile ? undefined : (
             <Space wrap>
-              {!currentComp.hasStages && (
+              {competition === 'WC' ? (
                 <Segmented
                   options={[
                     { label: t('matches.viewMatches'), value: 'matches' },
                     { label: t('matches.viewTable'), value: 'table' },
+                    { label: t('matches.viewKnockout'), value: 'knockout' },
                   ]}
                   value={view}
-                  onChange={(v) => setView(v as 'matches' | 'table')}
+                  onChange={(v) => setView(v as 'matches' | 'table' | 'knockout')}
                 />
+              ) : (
+                !currentComp.hasStages && (
+                  <Segmented
+                    options={[
+                      { label: t('matches.viewMatches'), value: 'matches' },
+                      { label: t('matches.viewTable'), value: 'table' },
+                    ]}
+                    value={view === 'knockout' ? 'matches' : view}
+                    onChange={(v) => setView(v as 'matches' | 'table')}
+                  />
+                )
               )}
               {view === 'matches' && (
                 <Segmented
@@ -665,15 +765,27 @@ export default function MatchesPage() {
       {/* Mobile view/status controls — rendered below tabs to avoid squeezing the tab bar */}
       {isMobile && (
         <Space wrap style={{ marginBottom: 16 }}>
-          {!currentComp.hasStages && (
+          {competition === 'WC' ? (
             <Segmented
               options={[
                 { label: t('matches.viewMatches'), value: 'matches' },
                 { label: t('matches.viewTable'), value: 'table' },
+                { label: t('matches.viewKnockout'), value: 'knockout' },
               ]}
               value={view}
-              onChange={(v) => setView(v as 'matches' | 'table')}
+              onChange={(v) => setView(v as 'matches' | 'table' | 'knockout')}
             />
+          ) : (
+            !currentComp.hasStages && (
+              <Segmented
+                options={[
+                  { label: t('matches.viewMatches'), value: 'matches' },
+                  { label: t('matches.viewTable'), value: 'table' },
+                ]}
+                value={view === 'knockout' ? 'matches' : view}
+                onChange={(v) => setView(v as 'matches' | 'table')}
+              />
+            )
           )}
           {view === 'matches' && (
             <Segmented
@@ -711,6 +823,11 @@ export default function MatchesPage() {
       <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 16 }}>
         {currentComp.label}
       </Typography.Title>
+
+      {/* Knockout bracket view (WC only) */}
+      {view === 'knockout' && competition === 'WC' && (
+        <WCKnockoutView userId={user?.id} backQuery={backQuery} />
+      )}
 
       {/* Standings view */}
       {view === 'table' && (

@@ -7,6 +7,7 @@ describe('stageLabel', () => {
     expect(stageLabel('SEMI_FINALS')).toBe('Semi Finals');
     expect(stageLabel('QUARTER_FINALS')).toBe('Quarter Finals');
     expect(stageLabel('LAST_16')).toBe('Round of 16');
+    expect(stageLabel('LAST_32')).toBe('Round of 32');
     expect(stageLabel('LEAGUE_STAGE')).toBe('League Stage');
     expect(stageLabel('REGULAR_SEASON')).toBe('Regular Season');
   });

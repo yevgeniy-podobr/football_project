@@ -42,6 +42,15 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - `hasStages: true` — **CL only**: finished matches grouped by stage, stage filter chips shown, no Matches/Table toggle
 - `hasStages: false` — **WC + all leagues**: flat match list, Matches/Table toggle available, stage filter chips hidden
 
+### WC Knockout view
+WC shows a 3-way `Matches | Table | Knockout` Segmented control (other competitions keep the 2-way toggle). Knockout view:
+- Sub-tabs: `Round of 32 | Round of 16 | Quarter Finals | Semi Finals | Final`
+- Each sub-tab fetches `GET /matches?competition=WC&stage=<STAGE_KEY>&limit=100` (no pagination)
+- stage filter values: `LAST_32`, `LAST_16`, `QUARTER_FINALS`, `SEMI_FINALS`, `FINAL`
+- Results are ordered by `matchDate ASC` (upcoming matches first)
+- TBD teams (teams not yet determined — stored with placeholder `externalId=0, name="TBD"`) render with a question-mark shield and italic "TBD" / "Не визначено" text
+- **Matches view (regular, no stage filter):** fully-undetermined fixtures (`TBD vs TBD`) are excluded at the **database level** (via `NOT { AND [homeTeam.externalId=0, awayTeam.externalId=0] }` in the Prisma `where` clause) so the `total` count and pagination are both correct. Matches with at least one known team remain visible. Knockout view queries include a `stage` param, which skips this exclusion and returns all matches.
+
 ## Features Implemented
 - Multi-competition tabs (WC, CL, PL, PD, BL1, SA) with color-coded badges; WC is the first tab
 - Matches list with All / Scheduled / Live / Finished tabs; server-side pagination (10/20/30 per page, Ant Design Pagination below the list)
@@ -56,7 +65,8 @@ Each competition carries a `hasStages` flag in the frontend `COMPETITIONS` array
 - Predictions accuracy tracking: resolved vs pending, exact score detection
 - Predictions page with KPI strip + pie/bar/line charts (Recharts)
 - POST /predictions/resolve-all — scores all unresolved predictions for finished matches
-- Matches sync from football-data.org (auto on request if stale >5 min, or forced)
+- Matches sync from football-data.org (auto on request if stale >5 min, or forced); knockout matches with undetermined teams are stored using a TBD placeholder team (`externalId=0`); team FKs are updated on the next sync once real teams are known
+- `GET /matches` now accepts `?stage=<STAGE_KEY>` filter; `limit=100` is allowed (for single-stage knockout fetches); stage-filtered results are ordered `ASC` by date
 - Redis cache (5-min TTL) on match queries via @nestjs/cache-manager + cache-manager-ioredis-yet; cache key includes page+limit
 - Standings cached in Redis (24-hour TTL, keys `standings:<competitionCode>`)
 - GET /config — tells frontend whether FOOTBALL_DATA_API_KEY is set

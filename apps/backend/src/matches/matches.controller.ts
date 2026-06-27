@@ -16,12 +16,12 @@ export class MatchesController {
     @Query('competition') competition?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('stage') stage?: string,
   ) {
     const pageNum = Math.max(1, Number.parseInt(page ?? '1', 10) || 1);
-    const limitNum = [10, 20, 30].includes(Number.parseInt(limit ?? '10', 10))
-      ? Number.parseInt(limit ?? '10', 10)
-      : 10;
-    return this.matchesService.findAll(status, competition, pageNum, limitNum);
+    const raw = Number.parseInt(limit ?? '10', 10);
+    const limitNum = [10, 20, 30, 100].includes(raw) ? raw : 10;
+    return this.matchesService.findAll(status, competition, pageNum, limitNum, stage);
   }
 
   @Get('sync')

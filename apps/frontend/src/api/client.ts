@@ -65,12 +65,13 @@ export const configApi = {
 };
 
 export const matchesApi = {
-  getAll: (status?: string, competition?: string, page = 1, limit = 10) =>
+  getAll: (status?: string, competition?: string, page = 1, limit = 10, stage?: string) =>
     api
       .get<PaginatedMatches>('/matches', {
         params: {
           ...(status ? { status } : {}),
           ...(competition ? { competition } : {}),
+          ...(stage ? { stage } : {}),
           page,
           limit,
         },

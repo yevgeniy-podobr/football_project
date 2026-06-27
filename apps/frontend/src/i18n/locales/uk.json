@@ -100,6 +100,7 @@
   "matches": {
     "viewMatches": "Матчі",
     "viewTable": "Таблиця",
+    "viewKnockout": "Плей-офф",
     "segAll": "Всі",
     "segScheduled": "Заплановані",
     "segLive": "Наживо",
@@ -119,6 +120,7 @@
       "SEMI_FINALS": "Півфінали",
       "QUARTER_FINALS": "Чвертьфінали",
       "LAST_16": "1/8 фіналу",
+      "LAST_32": "1/16 фіналу",
       "PLAYOFFS": "Плей-офф",
       "LEAGUE_STAGE": "Груповий етап",
       "REGULAR_SEASON": "Регулярний сезон"
@@ -133,6 +135,8 @@
     "emptyApiKeyMid": "у",
     "emptyApiKeyPost": "щоб отримати актуальні дані.",
     "emptyNotFound": "Матчі не знайдено.",
+    "emptyKnockout": "У цьому раунді ще немає матчів.",
+    "tbd": "Не визначено",
     "errorMatches": "Не вдалося завантажити матчі.",
     "errorMatchesDesc": "Переконайтесь, що бекенд запущено на порті 3000.",
     "errorStandings": "Не вдалося завантажити таблицю.",
