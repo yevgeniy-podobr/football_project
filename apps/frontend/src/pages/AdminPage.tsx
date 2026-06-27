@@ -316,6 +316,8 @@ export default function AdminPage() {
       qc.invalidateQueries({ queryKey: ['admin-stats'] });
       qc.invalidateQueries({ queryKey: ['admin-users'] });
       qc.invalidateQueries({ queryKey: ['admin-user'] });
+      qc.invalidateQueries({ queryKey: ['predictions'] });
+      qc.invalidateQueries({ queryKey: ['matches'] });
     },
   });
 
