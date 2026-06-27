@@ -188,7 +188,12 @@ export class MatchesService {
     const statuses = status ? status.split(',').map((s) => s.trim()) : null;
     const cacheKey = `matches:${competition ?? 'all'}:${statuses?.sort().join(',') ?? 'all'}:${stage ?? 'all'}:${page}:${limit}`;
 
-    const cached = await this.cache.get(cacheKey);
+    // Live match statuses (IN_PLAY, PAUSED) change every few minutes — caching them causes the
+    // Live tab to show stale results for up to 5 minutes after a match's status changes.
+    // Skip the Redis cache entirely for live queries so every request hits the DB fresh.
+    const isLiveQuery = statuses?.some((s) => s === 'IN_PLAY' || s === 'PAUSED') ?? false;
+
+    const cached = isLiveQuery ? null : await this.cache.get(cacheKey);
     if (cached) return cached;
 
     await this.fetchAndSync().catch((err) => console.error('Background sync failed:', err.message));
@@ -217,7 +222,9 @@ export class MatchesService {
     ]);
 
     const result = { data, total, page, limit };
-    await this.cache.set(cacheKey, result, CACHE_TTL_MS);
+    if (!isLiveQuery) {
+      await this.cache.set(cacheKey, result, CACHE_TTL_MS);
+    }
     return result;
   }
 

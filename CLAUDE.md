@@ -216,6 +216,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 - Standings value shape for WC: `GroupStandingRow[]` — `{ group: string; table: StandingRow[] }[]`, sorted A–L
 - Cache bust: WC entry is invalidated if `data[0]` lacks `group`+`table` keys (detects stale flat-format rows)
 - Force sync deletes only `matches:*` keys — never call `cache.reset()`: it flushes the whole Redis DB, which is shared with other local apps (Bull queues etc.) and would also wipe `standings:*`
+- **Live queries bypass the cache entirely:** `findAll()` skips both the Redis read and write when the status filter includes `IN_PLAY` or `PAUSED`. Live match statuses change every few minutes; caching them would make the Live tab lag up to 5 minutes behind reality. All other status combinations (Scheduled, Finished, All) are cached normally.
 - Redis must be running locally (`redis://localhost:6379` by default, e.g. `brew services start redis`)
 
 ## Auth — Roles
