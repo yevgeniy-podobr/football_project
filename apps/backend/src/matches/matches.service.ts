@@ -196,12 +196,12 @@ export class MatchesService {
     const where = {
       ...(statuses ? { status: { in: statuses } } : {}),
       ...(competition ? { competitionCode: competition } : {}),
-      // Stage filter is set for the Knockout view — include all matches there (TBD vs TBD visible).
-      // Without a stage filter (regular Matches view) exclude fully-undetermined slots so
-      // pagination totals are accurate and no page appears empty.
+      // Stage filter is set for the Knockout view — include all matches there (TBD teams visible).
+      // Without a stage filter (regular Matches view) exclude any slot where either team is still
+      // undetermined so that pagination totals are accurate and no partially-known fixtures appear.
       ...(stage
         ? { stage }
-        : { NOT: { AND: [{ homeTeam: { externalId: 0 } }, { awayTeam: { externalId: 0 } }] } }),
+        : { homeTeam: { externalId: { not: 0 } }, awayTeam: { externalId: { not: 0 } } }),
     };
 
     const [total, data] = await Promise.all([

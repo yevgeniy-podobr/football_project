@@ -459,6 +459,7 @@ export default function MatchDetailPage() {
   const isFinished = match.status === 'FINISHED';
   const isScheduled = match.status === 'SCHEDULED' || match.status === 'TIMED';
   const showScore = isFinished || match.status === 'IN_PLAY' || match.status === 'PAUSED';
+  const isEitherTeamTBD = match.homeTeam.externalId === 0 || match.awayTeam.externalId === 0;
 
   const highlightsUrl = `https://www.google.com/search?q=${encodeURIComponent(
     `${match.homeTeam.name} vs ${match.awayTeam.name} ${t('matchDetail.highlightsSearchTerm')} ${new Date(match.matchDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`,
@@ -665,198 +666,201 @@ export default function MatchDetailPage() {
         );
       })()}
 
-      {/* AI Preview */}
-      {(() => {
-        const previewForLang = getPreviewForLang(match.aiPreview, currentLang);
-        const hasOtherLang = hasPreviewForOtherLang(match.aiPreview, currentLang);
-        return (
-          <>
-            {isScheduled && previewForLang && (
-              <AiPreviewCard
-                preview={previewForLang}
-                homeTeamName={match.homeTeam.name}
-                awayTeamName={match.awayTeam.name}
-              />
-            )}
-            {isScheduled && !previewForLang && user && (
-              <div style={{ marginBottom: 24, textAlign: 'center' }}>
-                <Button
-                  onClick={() => aiPreviewMutation.mutate()}
-                  loading={aiPreviewMutation.isPending}
-                  icon={<span>{hasOtherLang ? '🌐' : '🔮'}</span>}
+      {/* AI Preview — hidden when either team is still TBD (Knockout bracket slots) */}
+      {!isEitherTeamTBD &&
+        (() => {
+          const previewForLang = getPreviewForLang(match.aiPreview, currentLang);
+          const hasOtherLang = hasPreviewForOtherLang(match.aiPreview, currentLang);
+          return (
+            <>
+              {isScheduled && previewForLang && (
+                <AiPreviewCard
+                  preview={previewForLang}
+                  homeTeamName={match.homeTeam.name}
+                  awayTeamName={match.awayTeam.name}
+                />
+              )}
+              {isScheduled && !previewForLang && user && (
+                <div style={{ marginBottom: 24, textAlign: 'center' }}>
+                  <Button
+                    onClick={() => aiPreviewMutation.mutate()}
+                    loading={aiPreviewMutation.isPending}
+                    icon={<span>{hasOtherLang ? '🌐' : '🔮'}</span>}
+                  >
+                    {hasOtherLang
+                      ? t(
+                          currentLang === 'uk'
+                            ? 'matchDetail.translateToUk'
+                            : 'matchDetail.translateToEn',
+                        )
+                      : t('matchDetail.getAiPreview')}
+                  </Button>
+                  {aiPreviewMutation.isError && (
+                    <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
+                      {t('matchDetail.aiPreviewError')}
+                    </Text>
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+      {/* Prediction card — hidden when either team is still TBD (Knockout bracket slots) */}
+      {!isEitherTeamTBD && (
+        <Card>
+          <Title level={5} style={{ marginTop: 0 }}>
+            {t('matchDetail.yourPrediction')}
+          </Title>
+
+          {!user && <Text type="secondary">{t('matchDetail.signInToPredict')}</Text>}
+
+          {user && prediction && (
+            <div style={{ marginBottom: 20 }}>
+              <div
+                style={{
+                  padding: 16,
+                  borderRadius: 8,
+                  border: `1px solid ${predictionBorderColor}`,
+                  background: predictionBgColor,
+                  textAlign: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 900,
+                    fontVariantNumeric: 'tabular-nums',
+                    display: 'block',
+                  }}
                 >
-                  {hasOtherLang
-                    ? t(
-                        currentLang === 'uk'
-                          ? 'matchDetail.translateToUk'
-                          : 'matchDetail.translateToEn',
-                      )
-                    : t('matchDetail.getAiPreview')}
-                </Button>
-                {aiPreviewMutation.isError && (
-                  <Text type="danger" style={{ display: 'block', marginTop: 8, fontSize: 13 }}>
-                    {t('matchDetail.aiPreviewError')}
+                  {prediction.predictedHome} – {prediction.predictedAway}
+                </Text>
+                <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
+                  {t(
+                    `matchDetail.outcome.${predictedOutcomeKey(prediction.predictedHome, prediction.predictedAway)}`,
+                  )}
+                </Text>
+                {isCorrect !== null && (
+                  <Text
+                    style={{
+                      fontWeight: 600,
+                      marginTop: 8,
+                      display: 'block',
+                      color: isCorrect ? '#4ade80' : '#f87171',
+                    }}
+                  >
+                    {prediction.isExactScore
+                      ? t('matchDetail.predExactScore')
+                      : isCorrect
+                        ? t('matchDetail.predCorrectOutcome')
+                        : t('matchDetail.predIncorrect')}
+                  </Text>
+                )}
+                {isCorrect === null && (
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
+                    {t('matchDetail.awaitingResult')}
                   </Text>
                 )}
               </div>
-            )}
-          </>
-        );
-      })()}
 
-      {/* Prediction card */}
-      <Card>
-        <Title level={5} style={{ marginTop: 0 }}>
-          {t('matchDetail.yourPrediction')}
-        </Title>
-
-        {!user && <Text type="secondary">{t('matchDetail.signInToPredict')}</Text>}
-
-        {user && prediction && (
-          <div style={{ marginBottom: 20 }}>
-            <div
-              style={{
-                padding: 16,
-                borderRadius: 8,
-                border: `1px solid ${predictionBorderColor}`,
-                background: predictionBgColor,
-                textAlign: 'center',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 32,
-                  fontWeight: 900,
-                  fontVariantNumeric: 'tabular-nums',
-                  display: 'block',
-                }}
-              >
-                {prediction.predictedHome} – {prediction.predictedAway}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 4 }}>
-                {t(
-                  `matchDetail.outcome.${predictedOutcomeKey(prediction.predictedHome, prediction.predictedAway)}`,
-                )}
-              </Text>
-              {isCorrect !== null && (
-                <Text
-                  style={{
-                    fontWeight: 600,
-                    marginTop: 8,
-                    display: 'block',
-                    color: isCorrect ? '#4ade80' : '#f87171',
-                  }}
+              {!isFinished && (
+                <Button
+                  danger
+                  type="text"
+                  size="small"
+                  onClick={() => deleteMutation.mutate(prediction.id)}
+                  loading={deleteMutation.isPending}
+                  style={{ marginTop: 12 }}
                 >
-                  {prediction.isExactScore
-                    ? t('matchDetail.predExactScore')
-                    : isCorrect
-                      ? t('matchDetail.predCorrectOutcome')
-                      : t('matchDetail.predIncorrect')}
-                </Text>
-              )}
-              {isCorrect === null && (
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
-                  {t('matchDetail.awaitingResult')}
-                </Text>
+                  {t('matchDetail.deletePrediction')}
+                </Button>
               )}
             </div>
+          )}
 
-            {!isFinished && (
-              <Button
-                danger
-                type="text"
-                size="small"
-                onClick={() => deleteMutation.mutate(prediction.id)}
-                loading={deleteMutation.isPending}
-                style={{ marginTop: 12 }}
-              >
-                {t('matchDetail.deletePrediction')}
-              </Button>
-            )}
-          </div>
-        )}
+          {user && !prediction && !isFinished && (
+            <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+              {t('matchDetail.noPredictionYet')}
+            </Text>
+          )}
 
-        {user && !prediction && !isFinished && (
-          <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-            {t('matchDetail.noPredictionYet')}
-          </Text>
-        )}
+          {user && !prediction && isFinished && (
+            <Text type="secondary">{t('matchDetail.predictionsClosed')}</Text>
+          )}
 
-        {user && !prediction && isFinished && (
-          <Text type="secondary">{t('matchDetail.predictionsClosed')}</Text>
-        )}
+          {user && !isFinished && (
+            <Form form={form} onFinish={handleFinish} layout="vertical">
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
+                <Form.Item
+                  label={match.homeTeam.name}
+                  name="home"
+                  rules={[{ required: true, message: ' ' }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <InputNumber
+                    min={0}
+                    max={20}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: '100%', textAlign: 'center', fontSize: 24 }}
+                  />
+                </Form.Item>
 
-        {user && !isFinished && (
-          <Form form={form} onFinish={handleFinish} layout="vertical">
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
-              <Form.Item
-                label={match.homeTeam.name}
-                name="home"
-                rules={[{ required: true, message: ' ' }]}
-                style={{ flex: 1, marginBottom: 0 }}
-              >
-                <InputNumber
-                  min={0}
-                  max={20}
-                  placeholder="0"
-                  size="large"
-                  style={{ width: '100%', textAlign: 'center', fontSize: 24 }}
-                />
-              </Form.Item>
+                <div style={{ paddingBottom: 8 }}>
+                  <Text style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
+                    –
+                  </Text>
+                </div>
 
-              <div style={{ paddingBottom: 8 }}>
-                <Text style={{ fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.3)' }}>
-                  –
-                </Text>
+                <Form.Item
+                  label={match.awayTeam.name}
+                  name="away"
+                  rules={[{ required: true, message: ' ' }]}
+                  style={{ flex: 1, marginBottom: 0 }}
+                >
+                  <InputNumber
+                    min={0}
+                    max={20}
+                    placeholder="0"
+                    size="large"
+                    style={{ width: '100%', fontSize: 24 }}
+                  />
+                </Form.Item>
               </div>
 
-              <Form.Item
-                label={match.awayTeam.name}
-                name="away"
-                rules={[{ required: true, message: ' ' }]}
-                style={{ flex: 1, marginBottom: 0 }}
-              >
-                <InputNumber
-                  min={0}
-                  max={20}
-                  placeholder="0"
-                  size="large"
-                  style={{ width: '100%', fontSize: 24 }}
-                />
-              </Form.Item>
-            </div>
-
-            <Form.Item shouldUpdate style={{ marginTop: 16, marginBottom: 16 }}>
-              {({ getFieldValue }) => {
-                const h = getFieldValue('home');
-                const a = getFieldValue('away');
-                if (h != null && a != null) {
-                  return (
-                    <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
-                      {t('matchDetail.predictedOutcome')}{' '}
-                      <Text strong style={{ color: 'inherit' }}>
-                        {t(`matchDetail.outcome.${predictedOutcomeKey(h, a)}`)}
+              <Form.Item shouldUpdate style={{ marginTop: 16, marginBottom: 16 }}>
+                {({ getFieldValue }) => {
+                  const h = getFieldValue('home');
+                  const a = getFieldValue('away');
+                  if (h != null && a != null) {
+                    return (
+                      <Text type="secondary" style={{ display: 'block', textAlign: 'center' }}>
+                        {t('matchDetail.predictedOutcome')}{' '}
+                        <Text strong style={{ color: 'inherit' }}>
+                          {t(`matchDetail.outcome.${predictedOutcomeKey(h, a)}`)}
+                        </Text>
                       </Text>
-                    </Text>
-                  );
-                }
-                return null;
-              }}
-            </Form.Item>
+                    );
+                  }
+                  return null;
+                }}
+              </Form.Item>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={isPending}
-              block
-              size="large"
-              disabled={aiStatsMutation.isPending || aiPreviewMutation.isPending}
-            >
-              {prediction ? t('matchDetail.updatePrediction') : t('matchDetail.savePrediction')}
-            </Button>
-          </Form>
-        )}
-      </Card>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={isPending}
+                block
+                size="large"
+                disabled={aiStatsMutation.isPending || aiPreviewMutation.isPending}
+              >
+                {prediction ? t('matchDetail.updatePrediction') : t('matchDetail.savePrediction')}
+              </Button>
+            </Form>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

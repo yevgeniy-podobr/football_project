@@ -49,7 +49,8 @@ WC shows a 3-way `Matches | Table | Knockout` Segmented control (other competiti
 - stage filter values: `LAST_32`, `LAST_16`, `QUARTER_FINALS`, `SEMI_FINALS`, `FINAL`
 - Results are ordered by `matchDate ASC` (upcoming matches first)
 - TBD teams (teams not yet determined — stored with placeholder `externalId=0, name="TBD"`) render with a question-mark shield and italic "TBD" / "Не визначено" text
-- **Matches view (regular, no stage filter):** fully-undetermined fixtures (`TBD vs TBD`) are excluded at the **database level** (via `NOT { AND [homeTeam.externalId=0, awayTeam.externalId=0] }` in the Prisma `where` clause) so the `total` count and pagination are both correct. Matches with at least one known team remain visible. Knockout view queries include a `stage` param, which skips this exclusion and returns all matches.
+- **Matches view (regular, no stage filter):** any fixture where **either** team is still undetermined is excluded at the **database level** (via `homeTeam: { externalId: { not: 0 } }, awayTeam: { externalId: { not: 0 } }` in the Prisma `where` clause) so the `total` count and pagination are both correct. Only matches with fully-determined teams are shown. Knockout view queries include a `stage` param, which skips this exclusion and returns all matches (including TBD vs TBD and team vs TBD slots).
+- **Knockout match detail — Prediction & AI Preview:** when navigating to a match detail page from the Knockout bracket, both the Prediction card and the AI Preview section are hidden if either team is still TBD (`match.homeTeam.externalId === 0 || match.awayTeam.externalId === 0`). They only appear once both teams are fully determined.
 
 ## Features Implemented
 - Multi-competition tabs (WC, CL, PL, PD, BL1, SA) with color-coded badges; WC is the first tab
