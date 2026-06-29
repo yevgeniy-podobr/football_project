@@ -215,6 +215,15 @@
     "lastName": "Last name",
     "save": "Save",
     "savedSuccess": "Profile saved.",
-    "saveFailed": "Failed to save profile"
+    "saveFailed": "Failed to save profile",
+    "changePasswordTitle": "Change Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "confirmNewPasswordRequired": "Please confirm your new password",
+    "newPasswordsNoMatch": "Passwords do not match",
+    "changePasswordBtn": "Change Password",
+    "changePasswordSuccess": "Password changed successfully.",
+    "changePasswordFailed": "Failed to change password"
   }
 }

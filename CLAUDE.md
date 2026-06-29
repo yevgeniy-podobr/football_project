@@ -118,13 +118,14 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `POST /auth/login` — email + password → returns JWT + user
 - `GET /auth/me` — returns current user from JWT payload (JwtAuthGuard)
 - `PATCH /auth/profile` — update firstName/lastName for logged-in user (JwtAuthGuard); returns new JWT + updated user
+- `PATCH /auth/change-password` — change password for logged-in user (JwtAuthGuard); accepts `{ currentPassword, newPassword (min 6) }`; verifies currentPassword with bcrypt; returns 400 if current password is wrong; returns `{ message }` on success
 - `POST /auth/forgot-password` — sends reset email via SMTP
 - `POST /auth/reset-password` — validates token (15-min expiry), updates password
 
 ### Frontend pages
 - `/login` — LoginPage
 - `/register` — RegisterPage (optional firstName/lastName fields)
-- `/profile` — ProfilePage (edit firstName/lastName; username/email shown read-only; protected)
+- `/profile` — ProfilePage (edit firstName/lastName; username/email shown read-only; Change Password section below the name form; protected)
 - `/forgot-password` — ForgotPasswordPage
 - `/reset-password?token=...` — ResetPasswordPage
 - `/admin` — AdminPage (ADMIN role required; redirects to `/` otherwise)

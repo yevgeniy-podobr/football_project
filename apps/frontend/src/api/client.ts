@@ -58,6 +58,8 @@ export const authApi = {
       .then((r) => r.data),
   updateProfile: (data: { firstName?: string | null; lastName?: string | null }) =>
     api.patch<{ access_token: string; user: User }>('/auth/profile', data).then((r) => r.data),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.patch<{ message: string }>('/auth/change-password', data).then((r) => r.data),
 };
 
 export const configApi = {

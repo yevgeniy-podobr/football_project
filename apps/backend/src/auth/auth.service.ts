@@ -94,6 +94,18 @@ export class AuthService {
     });
   }
 
+  async changePassword(userId: number, currentPassword: string, newPassword: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user?.passwordHash) throw new BadRequestException('No password set for this account');
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid) throw new BadRequestException('Current password is incorrect');
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await this.usersService.updatePassword(userId, passwordHash);
+    return { message: 'Password changed successfully.' };
+  }
+
   async updateProfile(userId: number, firstName: string | null, lastName: string | null) {
     const user = await this.usersService.updateProfile(userId, firstName, lastName);
     return { access_token: this.sign(user), user };

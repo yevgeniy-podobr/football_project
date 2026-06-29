@@ -215,6 +215,15 @@
     "lastName": "Прізвище",
     "save": "Зберегти",
     "savedSuccess": "Профіль збережено.",
-    "saveFailed": "Не вдалося зберегти профіль"
+    "saveFailed": "Не вдалося зберегти профіль",
+    "changePasswordTitle": "Змінити пароль",
+    "currentPassword": "Поточний пароль",
+    "newPassword": "Новий пароль",
+    "confirmNewPassword": "Підтвердити новий пароль",
+    "confirmNewPasswordRequired": "Будь ласка, підтвердіть новий пароль",
+    "newPasswordsNoMatch": "Паролі не збігаються",
+    "changePasswordBtn": "Змінити пароль",
+    "changePasswordSuccess": "Пароль успішно змінено.",
+    "changePasswordFailed": "Не вдалося змінити пароль"
   }
 }

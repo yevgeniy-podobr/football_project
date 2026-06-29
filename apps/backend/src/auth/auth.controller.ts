@@ -57,6 +57,15 @@ class ResetPasswordDto {
   newPassword: string;
 }
 
+class ChangePasswordDto {
+  @IsString()
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(6)
+  newPassword: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -97,6 +106,13 @@ export class AuthController {
     const firstName = dto.firstName !== undefined ? dto.firstName : null;
     const lastName = dto.lastName !== undefined ? dto.lastName : null;
     return this.authService.updateProfile(req.user.sub, firstName, lastName);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('change-password')
+  @HttpCode(200)
+  changePassword(@Req() req: { user: JwtPayload }, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(req.user.sub, dto.currentPassword, dto.newPassword);
   }
 
   @UseGuards(JwtAuthGuard)
