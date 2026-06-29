@@ -153,35 +153,48 @@ export class MatchesService {
 
   async fetchAndSync(force = false): Promise<{ synced: boolean; count?: number; reason?: string }> {
     const apiKey = process.env.FOOTBALL_DATA_API_KEY;
-    if (!apiKey) return { synced: false, reason: 'No API key configured' };
+    if (!apiKey) return { synced: false, reason: 'No API key configured.' };
 
     if (!force) {
       const lastSync = await this.prisma.match.findFirst({ orderBy: { cachedAt: 'desc' } });
       if (lastSync) {
         const ageMs = Date.now() - new Date(lastSync.cachedAt).getTime();
-        if (ageMs < SYNC_INTERVAL_MS) return { synced: false, reason: 'Cache is fresh' };
+        if (ageMs < SYNC_INTERVAL_MS) return { synced: false, reason: 'Cache is fresh.' };
       }
     }
 
     const now = new Date();
     let totalCount = 0;
+    const failures: string[] = [];
 
     for (const comp of COMPETITIONS) {
       try {
         const n = await this.syncCompetition(apiKey, comp.code, now);
         totalCount += n;
       } catch (err: unknown) {
+        const apiMessage = axios.isAxiosError(err)
+          ? (err.response?.data?.message ?? err.message)
+          : err instanceof Error
+            ? err.message
+            : String(err);
+
         console.error(
           `Sync failed for ${comp.code}:`,
           err instanceof Error ? err.message : String(err),
         );
+
+        failures.push(`${comp.code}: ${apiMessage}`);
       }
     }
 
     // reset() would flush the whole Redis DB (including standings:* keys) — clear only match query keys
     const staleKeys = await this.cache.store.keys('matches:*');
     await Promise.all(staleKeys.map((key) => this.cache.del(key)));
-    return { synced: true, count: totalCount };
+    return {
+      synced: failures.length === 0,
+      count: totalCount,
+      ...(failures.length > 0 && { reason: failures.join('; ') }),
+    };
   }
 
   async findAll(status?: string, competition?: string, page = 1, limit = 10, stage?: string) {

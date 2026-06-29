@@ -426,7 +426,7 @@ export default function AdminPage() {
               <Alert
                 style={{ marginTop: 16 }}
                 type="success"
-                message={
+                title={
                   resolveMutation.data.resolved === 0
                     ? t('admin.resolveNone')
                     : t('admin.resolveSuccess', {
@@ -437,7 +437,7 @@ export default function AdminPage() {
               />
             )}
             {resolveMutation.isError && (
-              <Alert style={{ marginTop: 16 }} type="error" message={t('admin.resolveFailed')} />
+              <Alert style={{ marginTop: 16 }} type="error" title={t('admin.resolveFailed')} />
             )}
           </Card>
 
@@ -471,8 +471,8 @@ export default function AdminPage() {
             {syncMutation.isSuccess && syncMutation.data.type === 'sync' && (
               <Alert
                 style={{ marginTop: 16 }}
-                type="success"
-                message={
+                type={syncMutation.data.synced ? 'success' : 'error'}
+                title={
                   syncMutation.data.synced
                     ? t('admin.syncedCount', { count: syncMutation.data.count ?? 0 })
                     : t('admin.syncSkipped', {
@@ -482,7 +482,7 @@ export default function AdminPage() {
               />
             )}
             {syncMutation.isError && (
-              <Alert style={{ marginTop: 16 }} type="error" message={t('admin.syncFailed')} />
+              <Alert style={{ marginTop: 16 }} type="error" title={t('admin.syncFailed')} />
             )}
           </Card>
         </div>
