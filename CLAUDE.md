@@ -61,7 +61,7 @@ WC shows a 3-way `Matches | Table | Knockout` Segmented control (other competiti
 - Standings / league tables for PL, PD, BL1, SA (with CL spots + relegation zone row highlighting)
 - WC standings: all 12 groups (A–L) rendered in a responsive grid; top 2 per group highlighted green (advance to Round of 32); no relegation zone
 - JWT Authentication — fully implemented on backend and frontend
-- Password reset via email (Mailtrap SMTP, 15-minute token expiry)
+- Password reset via email (Resend API, 15-minute token expiry)
 - Predictions: create, update, delete (blocked on finished matches)
 - Predictions accuracy tracking: resolved vs pending, exact score detection
 - Predictions page with KPI strip + pie/bar/line charts (Recharts)
@@ -119,7 +119,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 - `GET /auth/me` — returns current user from JWT payload (JwtAuthGuard)
 - `PATCH /auth/profile` — update firstName/lastName for logged-in user (JwtAuthGuard); returns new JWT + updated user
 - `PATCH /auth/change-password` — change password for logged-in user (JwtAuthGuard); accepts `{ currentPassword, newPassword (min 6) }`; verifies currentPassword with bcrypt; returns 400 if current password is wrong; returns `{ message }` on success
-- `POST /auth/forgot-password` — sends reset email via SMTP
+- `POST /auth/forgot-password` — sends reset email via Resend API
 - `POST /auth/reset-password` — validates token (15-min expiry), updates password
 
 ### Frontend pages
@@ -317,7 +317,8 @@ Configuration lives in `render.yaml` at repo root (Render Blueprint). Connect th
 | `GEMINI_API_KEY` | Google AI Studio key |
 | `JWT_SECRET` | Random secret, at least 32 chars |
 | `CORS_ORIGIN` | Deployed frontend URL, no trailing slash |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` | Mailtrap (or production SMTP) |
+| `RESEND_API_KEY` | Resend API key (resend.com) |
+| `RESEND_FROM_EMAIL` | Sender address — defaults to `onboarding@resend.dev` (Resend shared domain, no verification needed); update once a custom domain is verified |
 | `PORT` | Set automatically by Render — do not set manually |
 
 ### Required env vars on Render (frontend static site)
@@ -335,6 +336,7 @@ Configuration lives in `render.yaml` at repo root (Render Blueprint). Connect th
 ### Free-tier caveats
 - Render free Web Services spin down after 15 min of inactivity — first request after idle takes ~30 s
 - Upstash Redis free tier: 10k commands/day; cached responses count against this
+- Resend free tier: 3,000 emails/month, 100/day
 
 ## Environment Variables (apps/backend/.env)
 ```
@@ -345,10 +347,8 @@ GEMINI_API_KEY=your_gemini_api_key   # Google AI Studio key for AI match stats
 JWT_SECRET=your_jwt_secret
 PORT=3000                        # optional, defaults to 3000
 CORS_ORIGIN=http://localhost:5173 # also used as base URL for password reset links
-SMTP_HOST=sandbox.smtp.mailtrap.io
-SMTP_PORT=2525
-SMTP_USER=your_mailtrap_user
-SMTP_PASS=your_mailtrap_pass
+RESEND_API_KEY=re_your_api_key_here
+RESEND_FROM_EMAIL=onboarding@resend.dev  # temporary shared sender; update once custom domain verified
 ```
 
 ## Node / Package Manager

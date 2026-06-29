@@ -34,14 +34,10 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false   # set to the deployed frontend URL, e.g. https://football-predictor.onrender.com
-      - key: SMTP_HOST
+      - key: RESEND_API_KEY
         sync: false
-      - key: SMTP_PORT
-        sync: false
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false   # defaults to onboarding@resend.dev; set once a custom domain is verified
 
   # ─── Frontend (React + Vite Static Site) ─────────────────────────────────────
   - type: web

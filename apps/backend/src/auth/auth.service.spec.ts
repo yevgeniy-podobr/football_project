@@ -44,11 +44,7 @@ describe('AuthService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn(
-              (key: string) =>
-                ({ SMTP_HOST: 'smtp.test', SMTP_PORT: 587, SMTP_USER: 'u', SMTP_PASS: 'p' })[key] ??
-                '',
-            ),
+            get: jest.fn((key: string) => ({ RESEND_API_KEY: 're_test_key' })[key] ?? ''),
           },
         },
       ],

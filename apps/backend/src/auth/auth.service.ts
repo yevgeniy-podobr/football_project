@@ -3,33 +3,29 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { UsersService } from '../users/users.service';
 import type { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
-  private readonly mailer: nodemailer.Transporter;
+  private readonly resend: Resend;
+  private readonly fromEmail: string;
 
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {
-    this.mailer = nodemailer.createTransport({
-      host: config.get<string>('SMTP_HOST'),
-      port: config.get<number>('SMTP_PORT'),
-      auth: {
-        user: config.get<string>('SMTP_USER'),
-        pass: config.get<string>('SMTP_PASS'),
-      },
-    });
+    this.resend = new Resend(config.get<string>('RESEND_API_KEY'));
+    this.fromEmail = config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
   }
 
   async register(
@@ -84,14 +80,15 @@ export class AuthService {
     const appUrl = this.config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173';
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
-    await this.mailer.sendMail({
-      from: this.config.get<string>('SMTP_USER'),
+    const { error } = await this.resend.emails.send({
+      from: this.fromEmail,
       to: user.email,
       subject: 'Football Predictor — reset your password',
       text: `Click the link below to reset your password (valid for 15 minutes):\n\n${resetUrl}`,
       html: `<p>Click the link below to reset your password (valid for 15 minutes):</p>
              <p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
+    if (error) throw new InternalServerErrorException('Failed to send reset email');
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
