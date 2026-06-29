@@ -44,7 +44,7 @@ describe('AuthService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) => ({ RESEND_API_KEY: 're_test_key' })[key] ?? ''),
+            get: jest.fn((key: string) => ({ BREVO_API_KEY: 'brevo-test-key' })[key] ?? ''),
           },
         },
       ],

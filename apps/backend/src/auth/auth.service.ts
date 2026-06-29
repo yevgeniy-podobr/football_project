@@ -10,24 +10,26 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { Role } from '@prisma/client';
+import axios from 'axios';
 import * as bcrypt from 'bcryptjs';
-import { Resend } from 'resend';
 import { UsersService } from '../users/users.service';
 import type { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly resend: Resend;
-  private readonly fromEmail: string;
+  private readonly brevoApiKey: string;
+  private readonly senderEmail: string;
+  private readonly senderName: string;
 
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {
-    this.resend = new Resend(config.get<string>('RESEND_API_KEY'));
-    this.fromEmail = config.get<string>('RESEND_FROM_EMAIL') ?? 'onboarding@resend.dev';
+    this.brevoApiKey = config.get<string>('BREVO_API_KEY') ?? '';
+    this.senderEmail = config.get<string>('BREVO_SENDER_EMAIL') ?? '';
+    this.senderName = config.get<string>('BREVO_SENDER_NAME') ?? 'Football Predictor';
   }
 
   async register(
@@ -82,18 +84,24 @@ export class AuthService {
     const appUrl = this.config.get<string>('CORS_ORIGIN') ?? 'http://localhost:5173';
     const resetUrl = `${appUrl}/reset-password?token=${token}`;
 
-    const { error } = await this.resend.emails.send({
-      from: this.fromEmail,
-      to: user.email,
-      subject: 'Football Predictor — reset your password',
-      text: `Click the link below to reset your password (valid for 15 minutes):\n\n${resetUrl}`,
-      html: `<p>Click the link below to reset your password (valid for 15 minutes):</p>
+    await axios
+      .post(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          sender: { name: this.senderName, email: this.senderEmail },
+          to: [{ email: user.email }],
+          subject: 'Football Predictor — reset your password',
+          textContent: `Click the link below to reset your password (valid for 15 minutes):\n\n${resetUrl}`,
+          htmlContent: `<p>Click the link below to reset your password (valid for 15 minutes):</p>
              <p><a href="${resetUrl}">${resetUrl}</a></p>`,
-    });
-    if (error) {
-      this.logger.error('Resend email failed', JSON.stringify(error));
-      throw new InternalServerErrorException('Failed to send reset email');
-    }
+        },
+        { headers: { 'api-key': this.brevoApiKey } },
+      )
+      .catch((err: unknown) => {
+        const data = (err as { response?: { data?: unknown } })?.response?.data;
+        this.logger.error('Brevo email failed', JSON.stringify(data ?? err));
+        throw new InternalServerErrorException('Failed to send reset email');
+      });
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {

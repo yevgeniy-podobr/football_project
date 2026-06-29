@@ -34,10 +34,12 @@ services:
         sync: false
       - key: CORS_ORIGIN
         sync: false   # set to the deployed frontend URL, e.g. https://football-predictor.onrender.com
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false
-      - key: RESEND_FROM_EMAIL
-        sync: false   # defaults to onboarding@resend.dev; set once a custom domain is verified
+      - key: BREVO_SENDER_EMAIL
+        sync: false   # must be a verified sender in the Brevo dashboard (Senders section)
+      - key: BREVO_SENDER_NAME
+        sync: false   # display name, e.g. "Football Predictor"
 
   # ─── Frontend (React + Vite Static Site) ─────────────────────────────────────
   - type: web
