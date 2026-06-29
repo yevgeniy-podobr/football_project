@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Form, Input, Typography } from 'antd';
+import { Alert, Button, Card, Form, Input, Modal, message, Typography } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/client';
@@ -23,9 +23,9 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState(false);
   const [form] = Form.useForm<{ firstName: string; lastName: string }>();
 
+  const [pwModalOpen, setPwModalOpen] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState('');
-  const [pwSuccess, setPwSuccess] = useState(false);
   const [pwForm] = Form.useForm<{
     currentPassword: string;
     newPassword: string;
@@ -59,16 +59,28 @@ export default function ProfilePage() {
     }
   };
 
+  const openPwModal = () => {
+    pwForm.resetFields();
+    setPwError('');
+    setPwModalOpen(true);
+  };
+
+  const closePwModal = () => {
+    pwForm.resetFields();
+    setPwError('');
+    setPwModalOpen(false);
+  };
+
   const handleChangePassword = async (values: { currentPassword: string; newPassword: string }) => {
     setPwError('');
-    setPwSuccess(false);
     setPwLoading(true);
     try {
       await authApi.changePassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       });
-      setPwSuccess(true);
+      message.success(t('profile.changePasswordSuccess'));
+      setPwModalOpen(false);
       pwForm.resetFields();
     } catch (err: unknown) {
       setPwError(extractApiError(err, t('profile.changePasswordFailed')));
@@ -143,65 +155,71 @@ export default function ProfilePage() {
         </Form.Item>
       </Form>
 
-      <Title level={4} style={{ marginTop: 8, marginBottom: 16 }}>
+      <Button type="link" style={{ padding: 0 }} onClick={openPwModal}>
         {t('profile.changePasswordTitle')}
-      </Title>
+      </Button>
 
-      <Form form={pwForm} layout="vertical" onFinish={handleChangePassword} autoComplete="off">
-        <Form.Item
-          label={t('profile.currentPassword')}
-          name="currentPassword"
-          rules={[{ required: true, message: t('auth.passwordRequired') }]}
+      <Modal
+        title={t('profile.changePasswordTitle')}
+        open={pwModalOpen}
+        onCancel={closePwModal}
+        footer={null}
+        destroyOnHidden
+      >
+        <Form
+          form={pwForm}
+          layout="vertical"
+          onFinish={handleChangePassword}
+          autoComplete="off"
+          style={{ marginTop: 8 }}
         >
-          <Input.Password />
-        </Form.Item>
+          <Form.Item
+            label={t('profile.currentPassword')}
+            name="currentPassword"
+            rules={[{ required: true, message: t('auth.passwordRequired') }]}
+          >
+            <Input.Password />
+          </Form.Item>
 
-        <Form.Item
-          label={t('profile.newPassword')}
-          name="newPassword"
-          rules={[
-            { required: true, message: t('auth.passwordRequired') },
-            { min: 6, message: t('auth.passwordMin') },
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
+          <Form.Item
+            label={t('profile.newPassword')}
+            name="newPassword"
+            rules={[
+              { required: true, message: t('auth.passwordRequired') },
+              { min: 6, message: t('auth.passwordMin') },
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
 
-        <Form.Item
-          label={t('profile.confirmNewPassword')}
-          name="confirmNewPassword"
-          dependencies={['newPassword']}
-          rules={[
-            { required: true, message: t('profile.confirmNewPasswordRequired') },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('newPassword') === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error(t('profile.newPasswordsNoMatch')));
-              },
-            }),
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
+          <Form.Item
+            label={t('profile.confirmNewPassword')}
+            name="confirmNewPassword"
+            dependencies={['newPassword']}
+            rules={[
+              { required: true, message: t('profile.confirmNewPasswordRequired') },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('newPassword') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error(t('profile.newPasswordsNoMatch')));
+                },
+              }),
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
 
-        {pwError && <Alert title={pwError} type="error" showIcon style={{ marginBottom: 16 }} />}
-        {pwSuccess && (
-          <Alert
-            title={t('profile.changePasswordSuccess')}
-            type="success"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
+          {pwError && <Alert title={pwError} type="error" showIcon style={{ marginBottom: 16 }} />}
 
-        <Form.Item>
-          <Button type="primary" htmlType="submit" loading={pwLoading} disabled={pwLoading}>
-            {t('profile.changePasswordBtn')}
-          </Button>
-        </Form.Item>
-      </Form>
+          <Form.Item style={{ marginBottom: 0 }}>
+            <Button type="primary" htmlType="submit" loading={pwLoading} disabled={pwLoading}>
+              {t('profile.changePasswordBtn')}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -125,7 +125,7 @@ All endpoints and frontend pages are fully implemented and wired up.
 ### Frontend pages
 - `/login` — LoginPage
 - `/register` — RegisterPage (optional firstName/lastName fields)
-- `/profile` — ProfilePage (edit firstName/lastName; username/email shown read-only; Change Password section below the name form; protected)
+- `/profile` — ProfilePage (edit firstName/lastName; username/email shown read-only; "Change password" link below the name form opens a Modal with the change-password form; protected)
 - `/forgot-password` — ForgotPasswordPage
 - `/reset-password?token=...` — ResetPasswordPage
 - `/admin` — AdminPage (ADMIN role required; redirects to `/` otherwise)
