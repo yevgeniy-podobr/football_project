@@ -4,6 +4,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +17,7 @@ import type { JwtPayload } from './jwt.strategy';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly resend: Resend;
   private readonly fromEmail: string;
 
@@ -88,7 +90,10 @@ export class AuthService {
       html: `<p>Click the link below to reset your password (valid for 15 minutes):</p>
              <p><a href="${resetUrl}">${resetUrl}</a></p>`,
     });
-    if (error) throw new InternalServerErrorException('Failed to send reset email');
+    if (error) {
+      this.logger.error('Resend email failed', JSON.stringify(error));
+      throw new InternalServerErrorException('Failed to send reset email');
+    }
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
