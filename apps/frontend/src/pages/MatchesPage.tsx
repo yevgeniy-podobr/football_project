@@ -372,7 +372,6 @@ function StandingsTable({
   const isMobile = !screens.sm;
   const effectiveAdvLabel = advancementLabel ?? t('matches.legendCL');
 
-  const posW = isMobile ? 28 : 36;
   const teamW = isMobile ? 110 : 160;
   const statW = isMobile ? 26 : 36;
   const gdW = isMobile ? 42 : 52;
@@ -382,7 +381,7 @@ function StandingsTable({
     {
       title: '#',
       dataIndex: 'position',
-      width: posW,
+      width: 32,
       render: (pos: number) => {
         const isAdv = pos <= advancementSpots;
         const isRel = showRelegation && pos > total - RELEGATION;

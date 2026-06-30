@@ -550,7 +550,7 @@ export default function MatchDetailPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 16,
+            gap: 10,
           }}
         >
           <div style={{ textAlign: 'center', flex: 1 }}>
@@ -577,7 +577,7 @@ export default function MatchDetailPage() {
             )}
           </div>
 
-          <div style={{ textAlign: 'center', flexShrink: 0, padding: '0 16px' }}>
+          <div style={{ textAlign: 'center', flexShrink: 0, padding: '0 10px' }}>
             {showScore ? (
               <>
                 <Text style={{ fontSize: 48, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
